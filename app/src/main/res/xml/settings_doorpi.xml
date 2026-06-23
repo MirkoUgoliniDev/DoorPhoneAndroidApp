@@ -13,7 +13,7 @@
         android:entryValues="@array/piani_values" />
 
 
-    <se.lublin.mumla.preference.custom_control.MyEditTextPreference
+    <com.doorphone.preference.custom_control.MyEditTextPreference
         android:key="raspberry_config_url"
         android:defaultValue="http://192.168.1.54:8080/config/"
         android:dialogTitle="URL configurazione Raspberry"
@@ -38,7 +38,7 @@
         android:summary="Termina automaticamente la conversazione 3 s dopo aver aperto il portone"
         android:defaultValue="true" />
 
-    <se.lublin.mumla.preference.custom_control.MySeekBarPreference
+    <com.doorphone.preference.custom_control.MySeekBarPreference
         android:key="call_timeout_seconds"
         android:title="Timeout chiamata (secondi)"
         android:defaultValue="60"

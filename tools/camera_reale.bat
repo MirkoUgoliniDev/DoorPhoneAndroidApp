@@ -18,7 +18,7 @@ if %ERRORLEVEL% NEQ 0 (
 :: ============================================================
 
 set ADB="%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
-set PKG=se.lublin.mumla.beta
+set PKG=com.doorphone
 set PREFS=/data/data/%PKG%/shared_prefs/%PKG%_preferences.xml
 set ENDPOINT=http://192.168.1.54:8081/?action=stream
 

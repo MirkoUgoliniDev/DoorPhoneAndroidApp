@@ -803,13 +803,13 @@ APK: `app/build/outputs/apk/debug/doorphone.apk`
 ### Installazione su Nexus 7 (USB)
 ```powershell
 adb install -r app\build\outputs\apk\debug\doorphone.apk
-adb shell am start -n "se.lublin.mumla.beta/se.lublin.mumla.app.MumlaActivity"
+adb shell am start -n "com.doorphone/com.doorphone.app.MumlaActivity"
 ```
 
 ### Flavor
 | Flavor | Package | Stato |
 |--------|---------|-------|
-| `beta` | `se.lublin.mumla.beta` | Unico flavor attivo |
+| `beta` | `com.doorphone` | Unico flavor attivo |
 
 ---
 
@@ -854,7 +854,7 @@ mumlaO/
 │   │   └── bugfix_todo.md               Lista bug e fix applicati
 │   └── src/main/
 │       ├── AndroidManifest.xml
-│       └── java/se/lublin/mumla/
+│       └── java/com/doorphone/
 │           ├── app/
 │           │   ├── MumlaActivity.java        Launcher, primo binding servizio
 │           │   ├── MyApp.java                Application class, fetch config

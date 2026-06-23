@@ -18,7 +18,7 @@
         android:summary="@string/handsetModeSum"
         android:defaultValue="false"/>
 
-    <se.lublin.mumla.preference.SeekBarDialogPreference
+    <com.doorphone.preference.SeekBarDialogPreference
         android:title="@string/audioInputVolume"
         android:summary="@string/audioInputVolumeSum"
         android:key="inputVolume"
@@ -28,7 +28,7 @@
 
     <PreferenceCategory android:title="@string/voiceActivitySettings"
         android:key="vad_settings">
-        <se.lublin.mumla.preference.SeekBarDialogPreference
+        <com.doorphone.preference.SeekBarDialogPreference
             multiplier="0.1"
             android:defaultValue="50"
             android:key="vadThreshold"
@@ -58,7 +58,7 @@
             android:entries="@array/audioSampleRateValues"
             android:entryValues="@array/audioSampleRateValues"/>
 
-        <se.lublin.mumla.preference.SeekBarDialogPreference
+        <com.doorphone.preference.SeekBarDialogPreference
             android:key="input_bitrate"
             android:title="@string/inputQuality"
             multiplier="1000"

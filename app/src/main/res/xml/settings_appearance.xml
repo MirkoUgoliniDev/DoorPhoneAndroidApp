@@ -10,7 +10,7 @@
         android:title="@string/pref_show_user_count"
         android:summary="@string/pref_show_user_count_summary" />
 
-    <se.lublin.mumla.preference.SeekBarDialogPreference
+    <com.doorphone.preference.SeekBarDialogPreference
         android:key="pttButtonHeight"
         android:title="@string/pttButtonHeight"
         android:summary="@string/pttButtonHeightSum"

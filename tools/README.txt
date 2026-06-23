@@ -58,8 +58,8 @@ PASSI:
 ==============================================================
 
   cd C:\Lavori\Android\DoorPhoneAndroidApp
-  .\gradlew assembleBetaDebug
-  adb install -r app\build\outputs\apk\beta\debug\mumla-beta-universal-debug.apk
-  adb shell am start -n "se.lublin.mumla.beta/se.lublin.mumla.app.MumlaActivity"
+  .\gradlew assembleDebug
+  adb install -r app\build\outputs\apk\debug\doorphone_emulatore.apk
+  adb shell am start -n "com.doorphone/com.doorphone.app.MumlaActivity"
 
 ==============================================================

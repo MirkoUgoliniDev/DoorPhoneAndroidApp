@@ -12,7 +12,7 @@ android {
         minSdk 24
         targetSdk 25
         multiDexEnabled true
-        applicationId "se.lublin.mumla.beta"
+        applicationId "com.doorphone"
         versionCode 89
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
         testInstrumentationRunner "android.test.InstrumentationTestRunner"
@@ -80,7 +80,7 @@ android {
         quiet false
     }
 
-    namespace 'se.lublin.mumla'
+    namespace 'com.doorphone'
 }
 
 
