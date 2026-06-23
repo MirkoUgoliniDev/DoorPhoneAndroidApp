@@ -11,5 +11,8 @@ libraries/*
 .idea/
 gradle/
 build/
+
+# NDK build output intermedio (rigenerato da ndk-build)
+libraries/humla/src/main/obj/
 fastlane_to delete/
 ESEMPIO FUNZIONANTE/
