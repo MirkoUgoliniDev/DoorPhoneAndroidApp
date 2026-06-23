@@ -55,17 +55,17 @@ import com.doorphone.app.MyApp;
 import com.doorphone.callbacks.PostDataCallback;
 import com.doorphone.preference.Preferences;
 import com.doorphone.screenoff.ScreenOffAdminReceiver;
-import com.doorphone.service.MumlaService;
+import com.doorphone.service.DoorPhoneService;
 import com.doorphone.util.AboutActivity;
 import com.doorphone.util.CommandSubmitter;
 import com.doorphone.util.Sounds;
 
 /**
- * @brief Activity principale dell'applicazione MumlaO per il controllo del videocitofono DoorPi.
+ * @brief Activity principale dell'applicazione DoorPhone per il controllo del videocitofono DoorPi.
  *
  * Gestisce:
  * - Lo streaming video RTSP tramite {@link RtspSurfaceView} (libreria alexvas/rtsp-client-android).
- * - La comunicazione vocale Mumble tramite {@link MumlaService} (binding al servizio).
+ * - La comunicazione vocale Mumble tramite {@link DoorPhoneService} (binding al servizio).
  * - Il ciclo di vita della chiamata in ingresso (ring → accept/reject → close).
  * - L'apertura della porta tramite HTTP REST verso DoorPi ({@link CommandSubmitter}).
  * - Il blocco schermo automatico dopo timeout o fine chiamata.
@@ -90,7 +90,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     private static final String RING_TAG = "RING_DBG";
 
     /**
-     * @brief Extra di Intent usato da {@code MumlaService.Ring()} per segnalare un ring in arrivo.
+     * @brief Extra di Intent usato da {@code DoorPhoneService.Ring()} per segnalare un ring in arrivo.
      *
      * Sostituisce il vecchio percorso basato solo su {@code LocalBroadcast}: con lo schermo
      * spento l'Activity era stoppata e il receiver deregistrato, quindi il broadcast veniva
@@ -158,7 +158,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     public void setCtx(Context ctx) { _ctx = ctx; }
 
     /** @brief Riferimento al servizio Mumble, ottenuto tramite binding in {@link #mConnection}. */
-    MumlaService mService;
+    DoorPhoneService mService;
 
     /** @brief Preferenze dell'applicazione (singleton). */
     private Settings mSettings;
@@ -190,7 +190,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
      */
     private boolean mConnectionOk = false;
 
-    /** @brief {@code true} se il binding con {@link MumlaService} è attivo. */
+    /** @brief {@code true} se il binding con {@link DoorPhoneService} è attivo. */
     boolean isBound = false;
 
     /** @brief {@code true} se {@link #onStop()} ha fatto unbind e {@link #onResume()} deve rifarlo. */
@@ -377,7 +377,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
      *
      * - Imposta i flag per mostrare la schermata anche quando il dispositivo è bloccato.
      * - Carica le impostazioni e configura la ActionBar con il nome del piano configurato.
-     * - Inizializza l'UI e avvia il binding con {@link MumlaService}.
+     * - Inizializza l'UI e avvia il binding con {@link DoorPhoneService}.
      *
      * @param savedInstanceState Bundle con lo stato salvato (non usato).
      */
@@ -417,8 +417,8 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
         initUI();
         applyKioskModeIfNeeded();
 
-        Log.d(TAG, "START BOUND WITH MUMLA SERVICE");
-        Intent intent = new Intent(this, MumlaService.class);
+        Log.d(TAG, "START BOUND WITH DOORPHONE SERVICE");
+        Intent intent = new Intent(this, DoorPhoneService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -477,7 +477,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
 
         if (mNeedsRebind) {
             mNeedsRebind = false;
-            bindService(new Intent(this, MumlaService.class), mConnection, Context.BIND_AUTO_CREATE);
+            bindService(new Intent(this, DoorPhoneService.class), mConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
@@ -522,7 +522,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
      *   già distrutta dal sistema (spam SurfaceFlinger sul codec OMX.Nvidia.h264.decode).
      * - Sposta il task in primo piano nell'app switcher per impedire che appaia nella lista
      *   delle app recenti (comportamento kiosk).
-     * - Esegue l'unbinding da {@link MumlaService}.
+     * - Esegue l'unbinding da {@link DoorPhoneService}.
      */
     @Override
     protected void onStop() {
@@ -677,15 +677,15 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     }
 
     // -------------------------------------------------------------------------
-    // Binding con MumlaService
+    // Binding con DoorPhoneService
     // -------------------------------------------------------------------------
 
     /**
-     * @brief Connessione al servizio {@link MumlaService}.
+     * @brief Connessione al servizio {@link DoorPhoneService}.
      *
      * - {@link ServiceConnection#onServiceConnected}: ottiene il riferimento al servizio e,
      *   se non c'è una chiamata attiva E la connessione TCP Mumble è già stabilita,
-     *   chiama {@link MumlaService#closeCall()} per assicurarsi che il microfono sia mutato.
+     *   chiama {@link DoorPhoneService#closeCall()} per assicurarsi che il microfono sia mutato.
      *   Il guard {@code isConnected()} evita il NPE su {@code HumlaConnection.sendTCPMessage()}
      *   quando il bind avviene prima che la connessione TCP sia pronta (es. durante la
      *   generazione/migrazione del certificato client).
@@ -700,7 +700,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             try {
-                mService = (MumlaService) ((MumlaService.MumlaBinder) service).getService();
+                mService = (DoorPhoneService) ((DoorPhoneService.DoorPhoneBinder) service).getService();
                 isBound = true;
                 if (!ring && !mService.isDoorCallActive() && mService.isConnected()) {
                     mService.closeCall();
@@ -808,11 +808,11 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     }
 
     // -------------------------------------------------------------------------
-    // BroadcastReceiver messaggi da MumlaService
+    // BroadcastReceiver messaggi da DoorPhoneService
     // -------------------------------------------------------------------------
 
     /**
-     * @brief Ricevitore dei messaggi LocalBroadcast inviati da {@link MumlaService}.
+     * @brief Ricevitore dei messaggi LocalBroadcast inviati da {@link DoorPhoneService}.
      *
      * Gestisce due tipi di extra:
      *
@@ -957,7 +957,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     /**
      * @brief Gestisce un nuovo Intent quando l'Activity e' gia' istanziata (SINGLE_TOP).
      *
-     * Necessario perche' {@code MumlaService.Ring()} usa
+     * Necessario perche' {@code DoorPhoneService.Ring()} usa
      * {@link Intent#FLAG_ACTIVITY_SINGLE_TOP}: se l'Activity e' in cima allo stack,
      * Android riusa l'istanza e consegna l'Intent qui invece di passare per onCreate.
      *
@@ -1109,7 +1109,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
      *       la libreria a ignorare completamente il flusso audio: nessun decoder audio
      *       viene inizializzato e nessun suono viene riprodotto.
      *       L'audio della chiamata è gestito esclusivamente da Mumble tramite
-     *       {@link com.doorphone.service.MumlaService}, che usa il microfono del
+     *       {@link com.doorphone.service.DoorPhoneService}, che usa il microfono del
      *       dispositivo e il codec Opus — indipendente dallo stream RTSP.
      */
     private void startRtspStream() {
@@ -1157,7 +1157,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
                     mediaUri,
                     username.isEmpty() ? null : username,
                     camPassword.isEmpty() ? null : camPassword,
-                    "mumlaO",
+                    "doorphone",
                     RTSP_SOCKET_TIMEOUT_MS
             );
             mRtspSurfaceView.setVideoRotation(mSettings.getVideoRotation());
@@ -1294,7 +1294,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
                  * Nexus 7 2012 il click puo' arrivare mentre il bind non e' ancora pronto:
                  * in quel caso non cambiamo stato UI e aspettiamo il prossimo tentativo.
                  */
-                Log.w(TAG, "callButton: ignorato, MumlaService non ancora connesso");
+                Log.w(TAG, "callButton: ignorato, DoorPhoneService non ancora connesso");
                 return;
             }
             long now = android.os.SystemClock.elapsedRealtime();

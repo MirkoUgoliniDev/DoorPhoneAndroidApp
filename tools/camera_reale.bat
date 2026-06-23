@@ -33,5 +33,5 @@ echo.
 echo.
 echo  Riavvio app...
 %ADB% shell am force-stop %PKG%
-%ADB% shell am start -n "%PKG%/%PKG%.app.MumlaActivity"
+%ADB% shell am start -n "%PKG%/%PKG%.app.DoorPhoneActivity"
 echo  Fatto!

@@ -31,23 +31,23 @@ import java.util.List;
 import se.lublin.humla.model.IMessage;
 import com.doorphone.R;
 import com.doorphone.app.DrawerAdapter;
-import com.doorphone.app.MumlaActivity;
+import com.doorphone.app.DoorPhoneActivity;
 
 
 /**
  * A notification indicating that new messages have been received.
- * Intended to augment the existing {@link MumlaConnectionNotification} by providing a higher
+ * Intended to augment the existing {@link DoorPhoneConnectionNotification} by providing a higher
  * priority heads-up display on Android 5.0+ devices, as well as vibration.
  * Created by andrew on 25/03/16.
  */
-public class MumlaMessageNotification {
+public class DoorPhoneMessageNotification {
     private static final int NOTIFICATION_ID = 2;
     private static final long VIBRATION_PATTERN[] = { 0, 100 };
 
     private final Context mContext;
     private final List<IMessage> mUnreadMessages;
 
-    public MumlaMessageNotification(Context context) {
+    public DoorPhoneMessageNotification(Context context) {
         mContext = context;
         mUnreadMessages = new ArrayList<>();
     }
@@ -70,8 +70,8 @@ public class MumlaMessageNotification {
             style.addLine(line);
         }
 
-        Intent channelListIntent = new Intent(mContext, MumlaActivity.class);
-        channelListIntent.putExtra(MumlaActivity.EXTRA_DRAWER_FRAGMENT, DrawerAdapter.ITEM_SERVER);
+        Intent channelListIntent = new Intent(mContext, DoorPhoneActivity.class);
+        channelListIntent.putExtra(DoorPhoneActivity.EXTRA_DRAWER_FRAGMENT, DrawerAdapter.ITEM_SERVER);
         // FLAG_CANCEL_CURRENT ensures that the extra always gets sent.
         PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, channelListIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 

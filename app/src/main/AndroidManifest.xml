@@ -27,7 +27,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.Mumla"
+        android:theme="@style/Theme.DoorPhone"
         android:largeHeap="true"
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
@@ -43,7 +43,7 @@
             android:launchMode="singleTask">
         </activity>
 
-        <activity android:name=".app.MumlaActivity" android:label="@string/app_name" android:launchMode="singleTop" >
+        <activity android:name=".app.DoorPhoneActivity" android:label="@string/app_name" android:launchMode="singleTop" >
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -69,7 +69,7 @@
 
 
 
-        <activity android:name=".preference.Preferences" android:parentActivityName=".app.MumlaActivity" >
+        <activity android:name=".preference.Preferences" android:parentActivityName=".app.DoorPhoneActivity" >
             <intent-filter>
                 <action android:name="com.doorphone.app.PREFS_GENERAL"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -101,7 +101,7 @@
 
 
 
-        <service android:name=".service.MumlaService" android:enabled="true" android:exported="true" />
+        <service android:name=".service.DoorPhoneService" android:enabled="true" android:exported="true" />
 
 
         <receiver android:name="com.doorphone.broadcastreceiver.BootReceiver">

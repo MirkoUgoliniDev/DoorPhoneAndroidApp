@@ -8,7 +8,7 @@ import se.lublin.humla.IHumlaService;
 
 
 
-public interface IMumlaService extends IHumlaService {
+public interface IDoorPhoneService extends IHumlaService {
     void setOverlayShown(boolean showOverlay);
 
     boolean isOverlayShown();

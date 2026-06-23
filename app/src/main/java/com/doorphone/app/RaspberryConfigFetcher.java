@@ -107,7 +107,7 @@ public class RaspberryConfigFetcher {
 
     /**
      * @brief Overload con callback opzionale: {@code onComplete} viene eseguito sul main thread
-     *        al termine del fetch (successo o fallimento). Usato da {@link com.doorphone.app.MumlaActivity}
+     *        al termine del fetch (successo o fallimento). Usato da {@link com.doorphone.app.DoorPhoneActivity}
      *        dopo la selezione del piano per concatenare fetch → Connect().
      *
      * @param onComplete Runnable eseguito sul main thread a fetch terminato (può essere null).

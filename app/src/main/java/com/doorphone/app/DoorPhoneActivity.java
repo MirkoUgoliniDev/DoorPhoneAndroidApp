@@ -53,21 +53,21 @@ import com.doorphone.BuildConfig;
 import com.doorphone.R;
 import com.doorphone.Settings;
 import com.doorphone.preference.Preferences;
-import com.doorphone.service.IMumlaService;
-import com.doorphone.service.MumlaService;
+import com.doorphone.service.IDoorPhoneService;
+import com.doorphone.service.DoorPhoneService;
 import com.doorphone.util.HumlaServiceFragment;
 import com.doorphone.util.HumlaServiceProvider;
-import com.doorphone.util.MumlaTrustStore;
+import com.doorphone.util.DoorPhoneTrustStore;
 
 
 
 
 
 @SuppressWarnings("deprecation")
-public class MumlaActivity extends Activity implements HumlaServiceProvider, SharedPreferences.OnSharedPreferenceChangeListener {
-    private static final String TAG = MumlaActivity.class.getSimpleName();
+public class DoorPhoneActivity extends Activity implements HumlaServiceProvider, SharedPreferences.OnSharedPreferenceChangeListener {
+    private static final String TAG = DoorPhoneActivity.class.getSimpleName();
     public static final String EXTRA_DRAWER_FRAGMENT = "drawer_fragment";
-    private IMumlaService mService;
+    private IDoorPhoneService mService;
     private Settings mSettings;
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private Server mServerPendingPerm = null;
@@ -82,7 +82,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
      * Non avvia la connessione Mumble: lo fa {@link #mConnection} in
      * {@code onServiceConnected()}, dopo aver verificato che il servizio
      * non sia già connesso. Questo evita il "Kicked: connected from another
-     * device" quando l'Activity viene ricreata mentre {@link MumlaService}
+     * device" quando l'Activity viene ricreata mentre {@link DoorPhoneService}
      * è ancora attivo in background.
      */
     @Override
@@ -107,7 +107,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
 
 
     /**
-     * @brief Aggancia l'Activity al {@link MumlaService} ogni volta che torna visibile.
+     * @brief Aggancia l'Activity al {@link DoorPhoneService} ogni volta che torna visibile.
      *
      * Usa {@code BIND_AUTO_CREATE}: se il servizio non esiste ancora lo avvia,
      * se è già in esecuzione si aggancia all'istanza esistente senza riavviarlo.
@@ -121,10 +121,10 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
                 + " piano=" + mSettings.getDoorPiPiano()
                 + " audio_perm=" + (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ? "OK" : "MANCANTE"));
 
-        Intent connectIntent = new Intent(this, MumlaService.class);
+        Intent connectIntent = new Intent(this, DoorPhoneService.class);
         /*
          * Stabilita' Android 7.1/Nexus 7:
-         * Connect() avvia MumlaService tramite ServerConnectTask, quindi il bind puo'
+         * Connect() avvia DoorPhoneService tramite ServerConnectTask, quindi il bind puo'
          * arrivare prima che startService() sia effettivamente eseguito. Con flag 0 il
          * bind fallisce se il servizio non esiste ancora e l'observer non viene registrato.
          * BIND_AUTO_CREATE rende il collegamento deterministico senza cambiare il target API.
@@ -138,7 +138,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
     /**
      * @brief Rilascia il binding al servizio e chiude i dialog attivi.
      *
-     * Il {@link MumlaService} resta in esecuzione come foreground service
+     * Il {@link DoorPhoneService} resta in esecuzione come foreground service
      * e mantiene la connessione Mumble attiva in background: l'unbind
      * non interrompe la sessione vocale.
      */
@@ -250,7 +250,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
 
 
     /**
-     * @brief Gestisce il ciclo di vita del binding al {@link MumlaService}.
+     * @brief Gestisce il ciclo di vita del binding al {@link DoorPhoneService}.
      *
      * <p><b>Logica di connessione Mumble</b> (in {@code onServiceConnected}):
      * il servizio viene interrogato sullo stato corrente <em>prima</em> di
@@ -262,7 +262,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
      * device": il server Mumble espelle la nuova connessione quando vede lo
      * stesso username già loggato, situazione che si verificava ogni volta
      * che l'Activity veniva ricreata (es. pressione Indietro + riapertura app)
-     * mentre il {@link MumlaService} rimaneva attivo in background.
+     * mentre il {@link DoorPhoneService} rimaneva attivo in background.
      */
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -275,7 +275,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
          */
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            mService = ((MumlaService.MumlaBinder) service).getService();
+            mService = ((DoorPhoneService.DoorPhoneBinder) service).getService();
             mService.setSuppressNotifications(true);
             mService.registerObserver(mObserver);
             mService.clearChatNotifications();
@@ -302,7 +302,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
 
             updateConnectionState(getService());
             // openVideoStream() NON va chiamata qui: se il servizio è ancora CONNECTING
-            // e la chiamata manda MumlaActivity in PAUSE, l'observer viene rimosso prima
+            // e la chiamata manda DoorPhoneActivity in PAUSE, l'observer viene rimosso prima
             // che la connessione completi. Se il TLS handshake fallisce (es. primo avvio,
             // cert server non ancora nel trust store), nessuno gestisce onTLSHandshakeFailed
             // e la connessione si perde definitivamente.
@@ -349,9 +349,9 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
             try {
                 final X509Certificate x509 = chain[0];
                 String alias = lastServer.getHost();
-                KeyStore trustStore = MumlaTrustStore.getTrustStore(MumlaActivity.this);
+                KeyStore trustStore = DoorPhoneTrustStore.getTrustStore(DoorPhoneActivity.this);
                 trustStore.setCertificateEntry(alias, x509);
-                MumlaTrustStore.saveTrustStore(MumlaActivity.this, trustStore);
+                DoorPhoneTrustStore.saveTrustStore(DoorPhoneActivity.this, trustStore);
                 Log.d(TAG, "onTLSHandshakeFailed — cert server accettato automaticamente: " + alias + ", riconnetto");
                 connectToServer(lastServer);
             } catch (Exception e) {
@@ -361,7 +361,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
 
         @Override
         public void onPermissionDenied(String reason) {
-            AlertDialog.Builder adb = new AlertDialog.Builder(MumlaActivity.this);
+            AlertDialog.Builder adb = new AlertDialog.Builder(DoorPhoneActivity.this);
             adb.setTitle(R.string.perm_denied);
             adb.setMessage(reason);
             adb.show();
@@ -515,8 +515,8 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
                 Connect();
                 // NON chiamare openVideoStream() qui: se il certificato deve essere
                 // generato (primo avvio), Connect() parte in background e openVideoStream()
-                // manderebbe MumlaActivity in pause PRIMA che la generazione finisca.
-                // Con MumlaActivity in pause, il dialog RECORD_AUDIO non viene gestito
+                // manderebbe DoorPhoneActivity in pause PRIMA che la generazione finisca.
+                // Con DoorPhoneActivity in pause, il dialog RECORD_AUDIO non viene gestito
                 // correttamente e la connessione non parte mai.
                 // openVideoStream() viene chiamata da updateConnectionState() al CONNECTED.
             });
@@ -530,9 +530,9 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
         String mumblaserverName = mSettings.getDoorPiName();
         String mumblaserverIP = mSettings.getDoorPiHost();
         String mumblaserverPassword = mSettings.getDoorPiPassword();
-        int mumlaServerPort = mSettings.getDoorPiPort();
+        int doorphoneServerPort = mSettings.getDoorPiPort();
 
-        Server server = new Server(1, mumblaserverName, mumblaserverIP, mumlaServerPort, piano, mumblaserverPassword);
+        Server server = new Server(1, mumblaserverName, mumblaserverIP, doorphoneServerPort, piano, mumblaserverPassword);
         ensureCertificateAndConnect(server);
     }
 
@@ -591,7 +591,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
     public void connectToServer(final Server server) {
         try {
             mServerPendingPerm = null;
-            boolean audioOk = ContextCompat.checkSelfPermission(MumlaActivity.this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+            boolean audioOk = ContextCompat.checkSelfPermission(DoorPhoneActivity.this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
             String svcState = (mService != null) ? mService.getConnectionState().name() : "null";
             Log.d(TAG, "connectToServer — server=" + server.getHost() + ":" + server.getPort()
                     + " audio_perm=" + (audioOk ? "OK" : "MANCANTE")
@@ -599,7 +599,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
 
             if (!audioOk) {
                 Log.d(TAG, "connectToServer — richiedo RECORD_AUDIO, salvo server in mServerPendingPerm");
-                ActivityCompat.requestPermissions(MumlaActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
+                ActivityCompat.requestPermissions(DoorPhoneActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
                 mServerPendingPerm = server;
                 return;
             }
@@ -656,7 +656,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
                 }
             } else {
                 Log.w(TAG, "onRequestPermissionsResult — RECORD_AUDIO NEGATO");
-                Toast.makeText(MumlaActivity.this, getString(R.string.grant_perm_microphone),
+                Toast.makeText(DoorPhoneActivity.this, getString(R.string.grant_perm_microphone),
                         Toast.LENGTH_LONG).show();
             }
         }
@@ -704,7 +704,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
                     @Override
                     public void onCancel(DialogInterface dialog) {
                         mService.disconnect();
-                        Toast.makeText(MumlaActivity.this, R.string.cancelled, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DoorPhoneActivity.this, R.string.cancelled, Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -730,7 +730,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
 
 
                     // TODO:  popup che si apre quando si perde la connessione
-                    AlertDialog.Builder ab = new AlertDialog.Builder(MumlaActivity.this);
+                    AlertDialog.Builder ab = new AlertDialog.Builder(DoorPhoneActivity.this);
                     ab.setTitle(getString(R.string.connectionRefused));
                     HumlaException error = getService().getConnectionError();
                     if (error != null && mService.isReconnecting()) {
@@ -784,7 +784,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
                             public void onClick(DialogInterface dialog, int which) {
                                 if (getService() != null)
                                     getService().markErrorShown();
-                                startActivity(new Intent(MumlaActivity.this, Preferences.class));
+                                startActivity(new Intent(DoorPhoneActivity.this, Preferences.class));
                             }
                         });
                         ab.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -804,7 +804,7 @@ public class MumlaActivity extends Activity implements HumlaServiceProvider, Sha
     }
 
     @Override
-    public IMumlaService getService() {
+    public IDoorPhoneService getService() {
         return mService;
     }
 

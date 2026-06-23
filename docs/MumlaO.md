@@ -17,7 +17,7 @@
 1. [Requisiti](#1-requisiti)
 2. [Architettura del sistema](#2-architettura-del-sistema)
 3. [Configurazione remota — RaspberryConfigFetcher](#3-configurazione-remota--raspberryconfigfetcher)
-4. [Foreground Service — MumlaService](#4-foreground-service--mumlaservice)
+4. [Foreground Service — DoorPhoneService](#4-foreground-service--mumlaservice)
 5. [Riconnessione WiFi e Doze mode](#5-riconnessione-wifi-e-doze-mode)
 6. [Streaming video RTSP](#6-streaming-video-rtsp)
 7. [Server DoorPi — HTTP REST](#7-server-doorpi--http-rest)
@@ -72,7 +72,7 @@ Il sistema è composto da un **Raspberry Pi** (DoorPi) che funge da centrale cit
 │  │                     VideoVLCActivity                           │  │
 │  │                                                                │  │
 │  │  ┌──────────────────┐  ┌──────────────┐  ┌─────────────────┐  │  │
-│  │  │  RtspSurfaceView │  │ MumlaService │  │CommandSubmitter │  │  │
+│  │  │  RtspSurfaceView │  │ DoorPhoneService │  │CommandSubmitter │  │  │
 │  │  │  RTSP H.264/265  │  │ Mumble VoIP  │  │  HTTP REST      │  │  │
 │  │  └────────┬─────────┘  └──────┬───────┘  └───────┬─────────┘  │  │
 │  └───────────┼───────────────────┼──────────────────┼────────────┘  │
@@ -98,8 +98,8 @@ Il sistema è composto da un **Raspberry Pi** (DoorPi) che funge da centrale cit
 
 | Layer | Classi principali |
 |-------|------------------|
-| **UI** | `VideoVLCActivity`, `MumlaActivity`, `Preferences` |
-| **Service** | `MumlaService` (foreground, connessione Mumble) |
+| **UI** | `VideoVLCActivity`, `DoorPhoneActivity`, `Preferences` |
+| **Service** | `DoorPhoneService` (foreground, connessione Mumble) |
 | **Config** | `RaspberryConfigFetcher` (fetch JSON config dal Raspberry) |
 | **Network** | `CommandSubmitter` (HTTP REST), libreria `Humla` (protocollo Mumble) |
 | **Video** | `RtspSurfaceView` (libreria alexvas, MediaCodec nativo) |
@@ -259,27 +259,27 @@ curl -s "http://192.168.1.54:8080/config/?p=p1" | python3 -c \
 
 ---
 
-## 4. Foreground Service — MumlaService
+## 4. Foreground Service — DoorPhoneService
 
 ### Perché serve un foreground service
 
-Android uccide i servizi in background quando il dispositivo entra in **Doze mode** (display spento). Per un'app kiosk che deve ricevere il campanello 24/7, `MumlaService` gira come **foreground service** con notifica persistente, che Android non può terminare.
+Android uccide i servizi in background quando il dispositivo entra in **Doze mode** (display spento). Per un'app kiosk che deve ricevere il campanello 24/7, `DoorPhoneService` gira come **foreground service** con notifica persistente, che Android non può terminare.
 
 ### Ciclo di vita
 
 ```
-MumlaActivity.onCreate()
+DoorPhoneActivity.onCreate()
         │
-        └── startForegroundService(MumlaService)
+        └── startForegroundService(DoorPhoneService)
                 │
                 ▼
-        MumlaService.onCreate()
+        DoorPhoneService.onCreate()
         ├── startForeground() → notifica "Connessione in corso..."
         ├── registerObserver(mObserver)
         └── registerNetworkCallback()     ← Doze fix
                 │
                 ▼
-        MumlaActivity.onServiceConnected()
+        DoorPhoneActivity.onServiceConnected()
         └── Connect()  ← solo se stato DISCONNECTED
                 │
                 ▼
@@ -305,7 +305,7 @@ MumlaActivity.onCreate()
 
 ### Flag `mDoorCallActive`
 
-`MumlaService` mantiene `private volatile boolean mDoorCallActive` per tracciare se una chiamata DoorPi è in corso. È `volatile` perché `onDisconnected()` gira sul thread di rete Humla mentre `openCall()`/`closeCall()` girano sul main thread.
+`DoorPhoneService` mantiene `private volatile boolean mDoorCallActive` per tracciare se una chiamata DoorPi è in corso. È `volatile` perché `onDisconnected()` gira sul thread di rete Humla mentre `openCall()`/`closeCall()` girano sul main thread.
 
 | Evento | `mDoorCallActive` |
 |--------|-------------------|
@@ -325,7 +325,7 @@ La libreria Humla usa il broadcast `CONNECTIVITY_ACTION` per rilevare il ritorno
 
 ### La soluzione: `NetworkCallback`
 
-`MumlaService` registra un `ConnectivityManager.NetworkCallback` che funziona anche in Doze mode:
+`DoorPhoneService` registra un `ConnectivityManager.NetworkCallback` che funziona anche in Doze mode:
 
 ```
 WiFi cade
@@ -484,7 +484,7 @@ Visitatore preme campanello
 DoorPi invia messaggio Mumble: "cmd-ring"
         │
         ▼
-MumlaService.onMessageLogged() → Ring()
+DoorPhoneService.onMessageLogged() → Ring()
 ├── WakeLock ACQUIRE_CAUSES_WAKEUP (3s) → display acceso
 ├── LocalBroadcast "ring" → VideoVLCActivity
 └── LocalBroadcast "ring" retry +1500ms (sicurezza Activity non ancora pronta)
@@ -500,7 +500,7 @@ VideoVLCActivity.messageReceiver riceve "ring"
         ▼ Utente clicca ACCETTA
         │
         ├── Cancella timeout ring (50s)
-        ├── MumlaService.openCall()
+        ├── DoorPhoneService.openCall()
         │       ├── mDoorCallActive = true
         │       └── setSelfMuteDeafState(false, false) → microfono attivo
         ├── sendMessage("cmd-accept-call") → DoorPi
@@ -552,7 +552,7 @@ Back premuto su VideoVLCActivity
 onStop() → unbindService() + mNeedsRebind = true
         │
         ▼
-MumlaActivity.onResume() → bind → onServiceConnected()
+DoorPhoneActivity.onResume() → bind → onServiceConnected()
 → stato CONNECTED → openVideoStream() → nuova VideoVLCActivity
         │
         ▼
@@ -600,11 +600,11 @@ Il sistema gestisce due livelli di connessione distinti:
 
 ```
 LIVELLO 1 — RETE (WiFi)
-    Gestito da: ConnectivityManager.NetworkCallback (MumlaService)
+    Gestito da: ConnectivityManager.NetworkCallback (DoorPhoneService)
     Evento chiave: onAvailable(Network)
 
 LIVELLO 2 — MUMBLE (TCP/TLS)
-    Gestito da: HumlaService + HumlaObserver (MumlaService)
+    Gestito da: HumlaService + HumlaObserver (DoorPhoneService)
     Evento chiave: onConnected() / onDisconnected()
 ```
 
@@ -680,7 +680,7 @@ Server Murmur si spegne / crash
 ```
 VideoVLCActivity.onCreate()
     │
-    ▼  bindService(MumlaService)
+    ▼  bindService(DoorPhoneService)
     │
     ▼  onServiceConnected()
     │   ├── mService.isConnected()  ← stato corrente HumlaService
@@ -698,7 +698,7 @@ restava rosso per tutta la fase di sync anche se la connessione era già attiva.
 (che scatta non appena il TCP/TLS con Murmur è stabilito):
 
 ```java
-// MumlaService.java — HumlaObserver.onConnected()
+// DoorPhoneService.java — HumlaObserver.onConnected()
 @Override
 public void onConnected() {
     showForegroundNotification(...);
@@ -803,7 +803,7 @@ APK: `app/build/outputs/apk/debug/doorphone.apk`
 ### Installazione su Nexus 7 (USB)
 ```powershell
 adb install -r app\build\outputs\apk\debug\doorphone.apk
-adb shell am start -n "com.doorphone/com.doorphone.app.MumlaActivity"
+adb shell am start -n "com.doorphone/com.doorphone.app.DoorPhoneActivity"
 ```
 
 ### Flavor
@@ -856,14 +856,14 @@ mumlaO/
 │       ├── AndroidManifest.xml
 │       └── java/com/doorphone/
 │           ├── app/
-│           │   ├── MumlaActivity.java        Launcher, primo binding servizio
+│           │   ├── DoorPhoneActivity.java        Launcher, primo binding servizio
 │           │   ├── MyApp.java                Application class, fetch config
 │           │   └── RaspberryConfigFetcher.java  Fetch + apply JSON config
 │           ├── ui/
 │           │   └── VideoVLCActivity.java     Schermata principale citofono
 │           ├── service/
-│           │   ├── MumlaService.java         Foreground service Mumble
-│           │   └── IMumlaService.java        Interfaccia pubblica servizio
+│           │   ├── DoorPhoneService.java         Foreground service Mumble
+│           │   └── IDoorPhoneService.java        Interfaccia pubblica servizio
 │           ├── util/
 │           │   ├── CommandSubmitter.java     HTTP REST verso DoorPi
 │           │   └── Sounds.java               SoundPool (suoneria, beep)
@@ -906,22 +906,22 @@ mumlaO/
 |---|---------|-----|------|
 | 1 | LibVLC instabile su Nexus 7 con RTSP H.264 | Sostituito con alexvas/rtsp-client-android (MediaCodec nativo) | `VideoVLCActivity`, `build.gradle` |
 | 2 | `cancelBuffer` spam SurfaceFlinger | `stopRtspStream()` solo in `onPause()`, rimosso da `onStop()`/`onDestroy()` | `VideoVLCActivity` |
-| 3 | NPE in `sendMessage()` durante riconnessione | Guard `isConnectionEstablished()` prima di accedere a `user_in_chat` | `MumlaService` |
-| 4 | `user_in_chat` con session ID stantii dopo disconnessione brusca | `user_in_chat.clear()` in `onConnectionDisconnected()` | `MumlaService` |
-| 5 | `openCall()` non implementato | `setSelfMuteDeafState(false, false)` + `mDoorCallActive = true` | `MumlaService` |
-| 6 | Foreground service non avviato subito | `startForeground()` spostato in `onCreate()` | `MumlaService` |
-| 7 | Notifica "Connesso" anche durante interruzione rete | Aggiornamento notifica in `onDisconnected()` → "In riconnessione..." | `MumlaService` |
+| 3 | NPE in `sendMessage()` durante riconnessione | Guard `isConnectionEstablished()` prima di accedere a `user_in_chat` | `DoorPhoneService` |
+| 4 | `user_in_chat` con session ID stantii dopo disconnessione brusca | `user_in_chat.clear()` in `onConnectionDisconnected()` | `DoorPhoneService` |
+| 5 | `openCall()` non implementato | `setSelfMuteDeafState(false, false)` + `mDoorCallActive = true` | `DoorPhoneService` |
+| 6 | Foreground service non avviato subito | `startForeground()` spostato in `onCreate()` | `DoorPhoneService` |
+| 7 | Notifica "Connesso" anche durante interruzione rete | Aggiornamento notifica in `onDisconnected()` → "In riconnessione..." | `DoorPhoneService` |
 | 8 | Suoneria silenziosa (ID sample hardcoded) | Usare `getSound1()`/`getSound2()` da `Sounds` | `VideoVLCActivity`, `Sounds` |
 | 9 | Primo ring non suona (race condition SoundPool) | Flag `mLoaded`, `playSound()` aspetta `onLoadComplete` | `Sounds` |
 | 10 | Volume suoneria cacheato al costruttore | Metodo `currentVolume()` legge volume in tempo reale | `Sounds` |
-| 11 | `CONNECTIVITY_ACTION` bloccato in Doze mode | `NetworkCallback` (funziona in Doze) sostituisce il broadcast | `MumlaService` |
-| 12 | `closeCall()` durante ricreazione Activity (kiosk=false) | Guard `mDoorCallActive` in `onServiceConnected()` | `VideoVLCActivity`, `MumlaService` |
+| 11 | `CONNECTIVITY_ACTION` bloccato in Doze mode | `NetworkCallback` (funziona in Doze) sostituisce il broadcast | `DoorPhoneService` |
+| 12 | `closeCall()` durante ricreazione Activity (kiosk=false) | Guard `mDoorCallActive` in `onServiceConnected()` | `VideoVLCActivity`, `DoorPhoneService` |
 | 13 | Mancato rebind dopo Home press | Flag `mNeedsRebind` + rebind in `onResume()` | `VideoVLCActivity` |
 | 14 | Pallino rosso per minuti anche se già connesso | `mService.isConnected()` in `onServiceConnected()` → update immediato | `VideoVLCActivity` |
-| 15 | `NetworkCallback.onAvailable()` su thread sbagliato (stale read) | Tutto spostato nel `post()` al main thread | `MumlaService` |
-| 16 | NPE se `onAvailable()` scatta prima di `Connect()` | Guard `getTargetServer() == null` | `MumlaService` |
+| 15 | `NetworkCallback.onAvailable()` su thread sbagliato (stale read) | Tutto spostato nel `post()` al main thread | `DoorPhoneService` |
+| 16 | NPE se `onAvailable()` scatta prima di `Connect()` | Guard `getTargetServer() == null` | `DoorPhoneService` |
 | 17 | `server_time` come stringa causa errore di 2 ore | Parsato come epoch int; fix lato server (vedi sezione 13) | `RaspberryConfigFetcher` |
-| 18 | Pallino stato resta rosso per secondi anche dopo riconnessione | `UpdateClientStatus("Connected")` spostato in `onConnected()` (TCP up) invece di aspettare `onUserConnected()` (sync utenti). Verde immediato su WiFi-return e Mumble-server-return | `MumlaService` |
+| 18 | Pallino stato resta rosso per secondi anche dopo riconnessione | `UpdateClientStatus("Connected")` spostato in `onConnected()` (TCP up) invece di aspettare `onUserConnected()` (sync utenti). Verde immediato su WiFi-return e Mumble-server-return | `DoorPhoneService` |
 
 ### Bug noti non ancora risolti
 

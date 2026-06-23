@@ -46,7 +46,7 @@ import se.lublin.humla.util.HumlaException;
 import se.lublin.humla.util.HumlaObserver;
 import com.doorphone.R;
 import com.doorphone.Settings;
-import com.doorphone.app.MumlaActivity;
+import com.doorphone.app.DoorPhoneActivity;
 import com.doorphone.app.MyApp;
 import com.doorphone.service.ipc.TalkBroadcastReceiver;
 import com.doorphone.ui.VideoVLCActivity;
@@ -58,7 +58,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 
 /**
- * @brief Servizio principale di MumlaO per la comunicazione Mumble con DoorPi.
+ * @brief Servizio principale di DoorPhone per la comunicazione Mumble con DoorPi.
  *
  * Estende {@link HumlaService} (protocollo Mumble/Humla) aggiungendo:
  * - Gestione del ciclo di vita della chiamata DoorPi (ring, accept, close).
@@ -74,7 +74,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
  * @note Il servizio è avviato e tenuto in foreground per tutto il ciclo di vita dell'app kiosk.
  */
 @SuppressWarnings("deprecation")
-public class MumlaService extends HumlaService implements SharedPreferences.OnSharedPreferenceChangeListener, IMumlaService {
+public class DoorPhoneService extends HumlaService implements SharedPreferences.OnSharedPreferenceChangeListener, IDoorPhoneService {
 
     /**
      * @brief Numero massimo di caratteri di un messaggio letto dal TTS.
@@ -89,7 +89,7 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
     private Settings mSettings;
 
     /** @brief Gestore delle notifiche chat nella status bar. */
-    private MumlaMessageNotification mMessageNotification;
+    private DoorPhoneMessageNotification mMessageNotification;
 
     /** @brief WakeLock di prossimità (non usato attualmente, riservato per future implementazioni). */
     private PowerManager.WakeLock mProximityLock;
@@ -120,7 +120,7 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
     private volatile boolean mDoorCallActive = false;
 
     /** @brief Tag per i log Logcat. */
-    private static final String TAG = MumlaService.class.getSimpleName();
+    private static final String TAG = DoorPhoneService.class.getSimpleName();
 
     /**
      * @brief Tag dedicato per i log diagnostici del flusso ring.
@@ -371,7 +371,7 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
                     Log.i(TAG, "[ACK] ricevuto: cmd-" + cmd);
                     Intent ackIntent = new Intent("my-message");
                     ackIntent.putExtra("message", cmd);
-                    LocalBroadcastManager.getInstance(MumlaService.this).sendBroadcast(ackIntent);
+                    LocalBroadcastManager.getInstance(DoorPhoneService.this).sendBroadcast(ackIntent);
                 }
             } else {
                 // Legge ad alta voce se TTS è abilitato, il messaggio è sotto soglia e non siamo assordati
@@ -481,10 +481,10 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
 
         // Il tema deve essere impostato manualmente qui: il tag <application> in XML non lo applica
         // alle View create dal servizio (overlay, dialog).
-        setTheme(R.style.Theme_Mumla);
+        setTheme(R.style.Theme_DoorPhone);
 
         mMessageLog = new ArrayList<>();
-        mMessageNotification = new MumlaMessageNotification(MumlaService.this);
+        mMessageNotification = new DoorPhoneMessageNotification(DoorPhoneService.this);
 
         if(mSettings.isTextToSpeechEnabled()){
             mTTS = new TextToSpeech(this, mTTSInitListener);
@@ -498,11 +498,11 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
     /**
      * @brief Restituisce il Binder per il binding dall'Activity.
      * @param intent Intent usato per il binding (non usato).
-     * @return Istanza di {@link MumlaBinder} che espone l'interfaccia {@link IMumlaService}.
+     * @return Istanza di {@link DoorPhoneBinder} che espone l'interfaccia {@link IDoorPhoneService}.
      */
     @Override
     public IBinder onBind(Intent intent) {
-        return new MumlaBinder(this);
+        return new DoorPhoneBinder(this);
     }
 
     /**
@@ -683,7 +683,7 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
     }
 
     // -------------------------------------------------------------------------
-    // Override IMumlaService
+    // Override IDoorPhoneService
     // -------------------------------------------------------------------------
 
     /** @brief Annulla il tentativo di riconnessione in corso (delegato a HumlaService). */
@@ -862,28 +862,28 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
     // -------------------------------------------------------------------------
 
     /**
-     * @brief Binder IPC che espone {@link IMumlaService} all'Activity.
+     * @brief Binder IPC che espone {@link IDoorPhoneService} all'Activity.
      *
      * Permette all'Activity di ottenere il riferimento al servizio tramite
      * {@link android.content.ServiceConnection#onServiceConnected(ComponentName, IBinder)}.
      */
-    public static class MumlaBinder extends Binder {
+    public static class DoorPhoneBinder extends Binder {
         /** @brief Riferimento al servizio Mumble. */
-        private final MumlaService mService;
+        private final DoorPhoneService mService;
 
         /**
          * @brief Costruttore.
          * @param service Istanza del servizio da esporre.
          */
-        private MumlaBinder(MumlaService service) {
+        private DoorPhoneBinder(DoorPhoneService service) {
             mService = service;
         }
 
         /**
          * @brief Restituisce l'interfaccia del servizio.
-         * @return Interfaccia {@link IMumlaService} del servizio.
+         * @return Interfaccia {@link IDoorPhoneService} del servizio.
          */
-        public IMumlaService getService() {
+        public IDoorPhoneService getService() {
             return mService;
         }
     }
@@ -1029,7 +1029,7 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
                 //   → lettura stale se letta dal thread del callback
                 // - doppio connect() prevenuto: se onAvailable() scatta due volte rapide,
                 //   il secondo post vede stato CONNECTING e si ferma
-                // - getTargetServer() null check: se il callback scatta prima che MumlaActivity
+                // - getTargetServer() null check: se il callback scatta prima che DoorPhoneActivity
                 //   abbia chiamato Connect() (e impostato mServer), connect() lancerebbe NPE
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (getTargetServer() == null) {
@@ -1129,7 +1129,7 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
                 );
             }
         }
-        Intent notificationIntent = new Intent(getApplicationContext(), MumlaActivity.class);
+        Intent notificationIntent = new Intent(getApplicationContext(), DoorPhoneActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
         Notification notification = new NotificationCompat.Builder(getApplicationContext(), MyApp.CHANNEL_ID)
@@ -1229,7 +1229,7 @@ public class MumlaService extends HumlaService implements SharedPreferences.OnSh
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             Intent retry = new Intent("my-message");
             retry.putExtra("message", "ring");
-            LocalBroadcastManager.getInstance(MumlaService.this).sendBroadcast(retry);
+            LocalBroadcastManager.getInstance(DoorPhoneService.this).sendBroadcast(retry);
             Log.d(RING_TAG, "[5d/Ring] LocalBroadcast 'my-message' inviato (retry +1500ms)");
         }, 1500);
     }

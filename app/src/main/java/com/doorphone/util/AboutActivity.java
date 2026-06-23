@@ -5,7 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.doorphone.R;
 
 /**
- * @brief Activity che mostra le informazioni sull'applicazione MumlaO.
+ * @brief Activity che mostra le informazioni sull'applicazione DoorPhone.
  *
  * Visualizza il layout {@code about.xml} con versione, autore e note
  * sull'applicazione citofono basata su Mumble/DoorPi.

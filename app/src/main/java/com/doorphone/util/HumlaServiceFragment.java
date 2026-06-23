@@ -25,7 +25,7 @@ import androidx.fragment.app.Fragment;
 
 import se.lublin.humla.IHumlaService;
 import se.lublin.humla.util.IHumlaObserver;
-import com.doorphone.service.IMumlaService;
+import com.doorphone.service.IDoorPhoneService;
 
 /**
  * Fragment class intended to make binding the Humla service to fragments easier.
@@ -99,7 +99,7 @@ public abstract class HumlaServiceFragment extends Fragment {
             onServiceDetached(mServiceProvider.getService());
     }
 
-    public IMumlaService getService() {
+    public IDoorPhoneService getService() {
         return mServiceProvider.getService();
     }
 }

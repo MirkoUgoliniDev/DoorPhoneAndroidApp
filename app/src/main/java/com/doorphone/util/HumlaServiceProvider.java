@@ -17,13 +17,13 @@
 
 package com.doorphone.util;
 
-import com.doorphone.service.IMumlaService;
+import com.doorphone.service.IDoorPhoneService;
 
 /**
  * Created by andrew on 03/08/13.
  */
 public interface HumlaServiceProvider {
-    IMumlaService getService();
+    IDoorPhoneService getService();
     void addServiceFragment(HumlaServiceFragment fragment);
     void removeServiceFragment(HumlaServiceFragment fragment);
 }

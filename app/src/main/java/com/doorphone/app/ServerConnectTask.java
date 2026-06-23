@@ -12,13 +12,13 @@ import se.lublin.humla.HumlaService;
 import se.lublin.humla.model.Server;
 import com.doorphone.R;
 import com.doorphone.Settings;
-import com.doorphone.service.MumlaService;
-import com.doorphone.util.MumlaTrustStore;
+import com.doorphone.service.DoorPhoneService;
+import com.doorphone.util.DoorPhoneTrustStore;
 
 
 
 /**
- * Constructs an intent for connection to a MumlaService and executes it.
+ * Constructs an intent for connection to a DoorPhoneService and executes it.
  * Created by andrew on 20/08/14.
  */
 @SuppressWarnings("deprecation")
@@ -49,14 +49,14 @@ public class ServerConnectTask extends AsyncTask<Server, Void, Intent> {
             e.printStackTrace();
         }
 
-        Intent connectIntent = new Intent(mContext, MumlaService.class);
+        Intent connectIntent = new Intent(mContext, DoorPhoneService.class);
         connectIntent.putExtra(HumlaService.EXTRAS_SERVER, server);
         connectIntent.putExtra(HumlaService.EXTRAS_CLIENT_NAME, mContext.getString(R.string.app_name) + "V: " + applicationVersion);
         connectIntent.putExtra(HumlaService.EXTRAS_TRANSMIT_MODE, inputMethod);
         connectIntent.putExtra(HumlaService.EXTRAS_DETECTION_THRESHOLD, mSettings.getDetectionThreshold());
         connectIntent.putExtra(HumlaService.EXTRAS_AMPLITUDE_BOOST, mSettings.getAmplitudeBoostMultiplier());
         connectIntent.putExtra(HumlaService.EXTRAS_AUTO_RECONNECT, mSettings.isAutoReconnectEnabled());
-        connectIntent.putExtra(HumlaService.EXTRAS_AUTO_RECONNECT_DELAY, MumlaService.RECONNECT_DELAY);
+        connectIntent.putExtra(HumlaService.EXTRAS_AUTO_RECONNECT_DELAY, DoorPhoneService.RECONNECT_DELAY);
         connectIntent.putExtra(HumlaService.EXTRAS_USE_OPUS, !mSettings.isOpusDisabled());
         connectIntent.putExtra(HumlaService.EXTRAS_INPUT_RATE, mSettings.getInputSampleRate());
         connectIntent.putExtra(HumlaService.EXTRAS_INPUT_QUALITY, mSettings.getInputQuality());
@@ -67,9 +67,9 @@ public class ServerConnectTask extends AsyncTask<Server, Void, Intent> {
         connectIntent.putExtra(HumlaService.EXTRAS_AUDIO_SOURCE, audioSource);
         connectIntent.putExtra(HumlaService.EXTRAS_AUDIO_STREAM, audioStream);
         connectIntent.putExtra(HumlaService.EXTRAS_FRAMES_PER_PACKET, mSettings.getFramesPerPacket());
-        connectIntent.putExtra(HumlaService.EXTRAS_TRUST_STORE, MumlaTrustStore.getTrustStorePath(mContext));
-        connectIntent.putExtra(HumlaService.EXTRAS_TRUST_STORE_PASSWORD, MumlaTrustStore.getTrustStorePassword());
-        connectIntent.putExtra(HumlaService.EXTRAS_TRUST_STORE_FORMAT, MumlaTrustStore.getTrustStoreFormat());
+        connectIntent.putExtra(HumlaService.EXTRAS_TRUST_STORE, DoorPhoneTrustStore.getTrustStorePath(mContext));
+        connectIntent.putExtra(HumlaService.EXTRAS_TRUST_STORE_PASSWORD, DoorPhoneTrustStore.getTrustStorePassword());
+        connectIntent.putExtra(HumlaService.EXTRAS_TRUST_STORE_FORMAT, DoorPhoneTrustStore.getTrustStoreFormat());
         connectIntent.putExtra(HumlaService.EXTRAS_HALF_DUPLEX, mSettings.isHalfDuplex());
         connectIntent.putExtra(HumlaService.EXTRAS_ENABLE_PREPROCESSOR, mSettings.isPreprocessorEnabled());
 

@@ -104,7 +104,7 @@ public class Preferences extends PreferenceActivity {
 
     @Override
     protected boolean isValidFragment(String fragmentName) {
-        return MumlaPreferenceFragment.class.getName().equals(fragmentName);
+        return DoorPhonePreferenceFragment.class.getName().equals(fragmentName);
     }
 
 
@@ -217,7 +217,7 @@ public class Preferences extends PreferenceActivity {
                         Toast.makeText(context,
                                 "Abilitazione fallita.\n" +
                                 "Metodo 1 — Settings Android:\n" +
-                                "  Sicurezza → Amministratori dispositivo → abilita MumlaO\n\n" +
+                                "  Sicurezza → Amministratori dispositivo → abilita DoorPhone\n\n" +
                                 "Metodo 2 — ADB da PC:\n" +
                                 "  adb shell dpm set-active-admin " + pkg + "/com.doorphone.screenoff.ScreenOffAdminReceiver",
                                 Toast.LENGTH_LONG).show();
@@ -231,7 +231,7 @@ public class Preferences extends PreferenceActivity {
 
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class MumlaPreferenceFragment extends PreferenceFragment {
+    public static class DoorPhonePreferenceFragment extends PreferenceFragment {
 
         @Override
         public void onCreate(Bundle savedInstanceState) {

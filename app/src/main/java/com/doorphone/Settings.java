@@ -97,7 +97,7 @@ public class Settings {
     public static final String PREF_CERT_DATA = "certificateData";
 
     public static final String PREF_DEFAULT_USERNAME = "defaultUsername";
-    public static final String DEFAULT_DEFAULT_USERNAME = "Mumla_User"; // funny var name
+    public static final String DEFAULT_DEFAULT_USERNAME = "DoorPhone_User"; // funny var name
 
     public static final String PREF_FORCE_TCP = "forceTcp";
     public static final Boolean DEFAULT_FORCE_TCP = false;
@@ -364,13 +364,13 @@ public class Settings {
     public int getTheme() {
         String theme = preferences.getString(PREF_THEME, ARRAY_THEME_LIGHT);
         if(ARRAY_THEME_LIGHT.equals(theme))
-            return R.style.Theme_Mumla;
+            return R.style.Theme_DoorPhone;
         else if(ARRAY_THEME_DARK.equals(theme))
-            return R.style.Theme_Mumla_Dark;
+            return R.style.Theme_DoorPhone_Dark;
         else if(ARRAY_THEME_SOLARIZED_LIGHT.equals(theme))
-            return R.style.Theme_Mumla_Solarized_Light;
+            return R.style.Theme_DoorPhone_Solarized_Light;
         else if(ARRAY_THEME_SOLARIZED_DARK.equals(theme))
-            return R.style.Theme_Mumla_Solarized_Dark;
+            return R.style.Theme_DoorPhone_Solarized_Dark;
         return -1;
     }
 

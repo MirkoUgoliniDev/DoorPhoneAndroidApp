@@ -5,7 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import com.doorphone.app.MumlaActivity;
+import com.doorphone.app.DoorPhoneActivity;
 
 
 public class BootReceiver extends BroadcastReceiver {
@@ -14,7 +14,7 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
             Log.i(TAG, "START ACTIVITY:");
-            Intent myIntent = new Intent(context, MumlaActivity.class);
+            Intent myIntent = new Intent(context, DoorPhoneActivity.class);
             myIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(myIntent);
     }

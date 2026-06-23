@@ -8,9 +8,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -22,7 +20,7 @@ import androidx.preference.PreferenceManager;
 import com.doorphone.Settings;
 
 /**
- * @brief Classe Application principale dell'app MumlaO.
+ * @brief Classe Application principale dell'app DoorPhone.
  *
  * Gestisce il ciclo di vita delle Activity per rilevare quando l'app
  * entra in foreground o background, e crea il canale di notifica
@@ -30,14 +28,14 @@ import com.doorphone.Settings;
  */
 public class MyApp extends Application implements Application.ActivityLifecycleCallbacks {
 
-    /** @brief ID interno del canale di notifica, usato da {@link com.doorphone.service.MumlaService}. */
+    /** @brief ID interno del canale di notifica, usato da {@link com.doorphone.service.DoorPhoneService}. */
     public static final String CHANNEL_ID = "autoStartServiceChannel";
 
     /**
      * @brief Nome visibile del canale di notifica nelle impostazioni di sistema Android.
-     * Appare in Impostazioni → App → MumlaO → Notifiche.
+     * Appare in Impostazioni → App → DoorPhone → Notifiche.
      */
-    public static final String CHANNEL_NAME = "MumlaO — Servizio Mumble";
+    public static final String CHANNEL_NAME = "DoorPhone — Servizio Mumble";
 
     private int activityReferences = 0;
     private boolean isActivityChangingConfigurations = false;
@@ -154,7 +152,7 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
     /**
      * @brief Crea il canale di notifica richiesto da Android 8.0+ per i foreground service.
      *
-     * Necessario per {@link com.doorphone.service.MumlaService}.
+     * Necessario per {@link com.doorphone.service.DoorPhoneService}.
      * Non fa nulla su versioni precedenti ad Android O.
      */
     private void createNotificationChannel() {
@@ -206,29 +204,6 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
 
     @Override
     public void onActivityDestroyed(Activity activity) {}
-
-
-    /**
-     * @brief Avvia un'app esterna tramite il suo package name.
-     *
-     * Usato per avviare l'app citofono associata (package: com.mumla.test).
-     * Non fa nulla se il package non è installato sul dispositivo.
-     */
-    protected void launchApp() {
-        Log.d(TAG, "------ TRY TO START ------");
-        String DoorPhonePackage = "com.mumla.test";
-        try {
-            PackageManager pm = getApplicationContext().getPackageManager();
-            Intent intent = pm.getLaunchIntentForPackage(DoorPhonePackage);
-            intent.setAction(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_LAUNCHER);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            Log.d(TAG, "------DOORPI STARTED------");
-        } catch (Exception ex) {
-            Log.e(TAG, ex.getMessage() + " Line number: " + ex.getStackTrace()[0].getLineNumber());
-        }
-    }
 
 
     /**
