@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<preference-headers xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <header
+        android:title="@string/general"
+        android:summary="@string/generalSum"
+        android:fragment="se.lublin.mumla.preference.Preferences$MumlaPreferenceFragment">
+        <extra android:name="settings" android:value="general"></extra>
+    </header>
+
+    <header
+        android:title="@string/audio"
+        android:summary="@string/audioSum"
+        android:fragment="se.lublin.mumla.preference.Preferences$MumlaPreferenceFragment">
+        <extra android:name="settings" android:value="audio"></extra>
+    </header>
+
+
+    <header
+        android:id="@+id/preference_title"
+        android:title="@string/doorpi_piano_title"
+        android:summary="@string/doorpi_piano_summary"
+        android:fragment="se.lublin.mumla.preference.Preferences$MumlaPreferenceFragment">
+        <extra android:name="settings" android:value="doorpi"></extra>
+    </header>
+
+</preference-headers>

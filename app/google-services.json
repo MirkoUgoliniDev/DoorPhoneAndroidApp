@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "757641894198",
+    "firebase_url": "https://fcm-pushnotification-713aa.firebaseio.com",
+    "project_id": "fcm-pushnotification-713aa",
+    "storage_bucket": "fcm-pushnotification-713aa.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:757641894198:android:6f614702096d88b6977b97",
+        "android_client_info": {
+          "package_name": "se.lublin.mumla.beta"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "757641894198-v1oqvmrhpovbiq380rcpbkdvgnb80fn2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBloUHf7J43rUKzxn1I1UtWSK2IL7wif5I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "757641894198-v1oqvmrhpovbiq380rcpbkdvgnb80fn2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

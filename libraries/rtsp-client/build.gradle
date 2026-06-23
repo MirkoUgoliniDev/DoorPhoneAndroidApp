@@ -1,0 +1,32 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+
+    namespace = 'com.alexvas.rtsp'
+
+    lint {
+        targetSdk 35
+    }
+}
+
+dependencies {
+    implementation 'androidx.annotation:annotation:1.9.1'
+    implementation 'androidx.media3:media3-exoplayer:1.9.0'
+    implementation 'androidx.camera:camera-core:1.5.2'
+    implementation 'org.jcodec:jcodec:0.2.5'
+}

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="@string/doorpi_piano_title" android:layout="@layout/preference_category_header" />
+
+    <ListPreference
+        android:key="doorpi_piano"
+        android:defaultValue=""
+        android:title="Piano"
+        android:summary="%s"
+        android:entries="@array/piani_names"
+        android:entryValues="@array/piani_values" />
+
+
+    <se.lublin.mumla.preference.custom_control.MyEditTextPreference
+        android:key="raspberry_config_url"
+        android:defaultValue="http://192.168.1.54:8080/config/"
+        android:dialogTitle="URL configurazione Raspberry"
+        android:title="URL config Raspberry"
+        android:summary="Actual value: %s" />
+
+    <ListPreference
+        android:key="video_rotation"
+        android:defaultValue="0"
+        android:title="@string/video_rotation_title"
+        android:summary="Rotazione attuale: %s°"
+        android:entries="@array/video_rotation_names"
+        android:entryValues="@array/video_rotation_values" />
+
+
+    <!-- Timeout automatico chiamata dopo che l'utente ha accettato -->
+    <PreferenceCategory android:title="Chiamata" />
+
+    <SwitchPreference
+        android:key="auto_close_on_unlock"
+        android:title="Chiudi chiamata dopo sblocco porta"
+        android:summary="Termina automaticamente la conversazione 3 s dopo aver aperto il portone"
+        android:defaultValue="true" />
+
+    <se.lublin.mumla.preference.custom_control.MySeekBarPreference
+        android:key="call_timeout_seconds"
+        android:title="Timeout chiamata (secondi)"
+        android:defaultValue="60"
+        min="20"
+        max="200"
+        suffix=" s" />
+
+    <!-- Sezione amministrazione dispositivo: necessaria per lockNow() (spegni display post-chiamata) -->
+    <PreferenceCategory android:title="Amministrazione dispositivo" />
+
+    <Preference
+        android:key="enable_device_admin"
+        android:title="Abilita Device Admin"
+        android:summary="Tocca per abilitare via root (necessario per spegnere il display)" />
+
+
+</PreferenceScreen>

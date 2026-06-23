@@ -1,0 +1,15 @@
+
+
+
+.claude/
+
+#Directory to ignore
+libraries/*
+!libraries/humla
+!libraries/rtsp-client
+.gradle/
+.idea/
+gradle/
+build/
+fastlane_to delete/
+ESEMPIO FUNZIONANTE/

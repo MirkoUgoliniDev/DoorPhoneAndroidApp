@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<!-- Here be constants. These resources do NOT need translation. -->
+<resources>
+
+
+    <string-array
+        name="audioInputNames">
+        <item>@string/inputMethodVoice</item>
+        <item>@string/inputMethodPtt</item>
+        <item>@string/inputMethodContinuous</item>
+    </string-array>
+
+    <string-array
+        name="audioInputValues">
+        <item>voiceActivity</item>
+        <item>ptt</item>
+        <item>continuous</item>
+    </string-array>
+
+
+    <string-array
+        name="audioSampleRateValues">
+        <item>48000</item>
+        <item>44100</item>
+        <item>16000</item>
+        <item>8000</item>
+    </string-array>
+
+
+
+    <string-array name="callModeNames">
+        <item>@string/call_mode_speakerphone</item>
+        <item>@string/call_mode_voice_call</item>
+    </string-array>
+
+    <string-array name="callModeValues">
+        <item>speakerphone</item>
+        <item>voice</item>
+    </string-array>
+
+
+
+    <string-array name="audio_per_packet_names">
+        <item>10ms</item>
+        <item>20ms</item>
+        <item>40ms</item>
+        <item>60ms</item>
+    </string-array>
+
+    <string-array name="audio_per_packet_values">
+        <item>"1"</item>
+        <item>"2"</item>
+        <item>"4"</item>
+        <item>"6"</item>
+    </string-array>
+
+
+
+
+
+    <string-array name="piani_names">
+        <item>Primo</item>
+        <item>Secondo</item>
+        <item>Terzo</item>
+        <item>Quarto</item>
+    </string-array>
+
+    <string-array name="piani_values">
+        <item>P1</item>
+        <item>P2</item>
+        <item>P3</item>
+        <item>P4</item>
+    </string-array>
+
+    <string-array name="video_rotation_names">
+        <item>0° (nessuna rotazione)</item>
+        <item>90° (orario)</item>
+        <item>180° (capovolto)</item>
+        <item>270° (antiorario)</item>
+    </string-array>
+
+    <string-array name="video_rotation_values">
+        <item>0</item>
+        <item>90</item>
+        <item>180</item>
+        <item>270</item>
+    </string-array>
+
+    <string-array name="camera_stream_type_names">
+        <item>MJPEG (HTTP)</item>
+        <item>RTSP</item>
+    </string-array>
+
+    <string-array name="camera_stream_type_values">
+        <item>mjpeg</item>
+        <item>rtsp</item>
+    </string-array>
+
+
+    <string name="copyright">Copyright &#169; 2014–2017 Andrew Comminos\nCopyright &#169; 2020 Daniel Lublin mumla@lublin.se\n\nhttps://mumla-app.gitlab.io</string>
+    <string name="project_link">https://mumla-app.gitlab.io</string>
+    <string name="acknowledgements_link">https://gitlab.com/quite/mumla/-/graphs/master</string>
+    <string name="license_gplv3">GNU General Public License v3.0</string>
+    <string name="license_gplv3_link">https://www.gnu.org/copyleft/gpl.html</string>
+    <string name="license_apache2">Apache License Version 2.0</string>
+    <string name="license_apache2_link">https://www.apache.org/licenses/LICENSE-2.0.html</string>
+
+</resources>

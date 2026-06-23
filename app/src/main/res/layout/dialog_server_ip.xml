@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_card">
+
+    <!-- Header con gradiente e angoli superiori arrotondati -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_dialog_header"
+        android:paddingTop="26dp"
+        android:paddingBottom="26dp"
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Indirizzo del server"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Inserisci l'indirizzo IP del Raspberry (DoorPi)"
+            android:textColor="#D6DAF5"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:lineSpacingExtra="2dp"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+    <!-- Campo IP -->
+    <EditText
+        android:id="@+id/server_ip_edit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="192.168.1.54"
+        android:textColorHint="#A0A4B0"
+        android:inputType="textNoSuggestions"
+        android:textSize="18sp"
+        android:textColor="#222831"
+        android:gravity="center"
+        android:minHeight="56dp"
+        android:background="@drawable/bg_dialog_edit"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp" />
+
+    <!-- Pulsante Conferma -->
+    <Button
+        android:id="@+id/btn_server_ip_conferma"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:text="CONFERMA"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/bg_dialog_button"
+        android:stateListAnimator="@null"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="22dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp" />
+
+</LinearLayout>

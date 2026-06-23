@@ -1,0 +1,92 @@
+apply plugin: 'com.android.library'
+
+
+buildscript {
+    repositories {
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:9.2.1'
+    }
+}
+
+
+repositories {
+    mavenCentral()
+    google()
+}
+
+
+dependencies {
+
+    api 'com.google.protobuf:protobuf-java:3.19.3'
+    api 'com.madgag.spongycastle:core:1.58.0.0'
+    api files('libs/humla-spongycastle/prov/build/libs/prov-1.51.0.0.jar')
+    api files('libs/humla-spongycastle/pkix/build/libs/pkix-1.51.0.0.jar')
+    implementation 'com.googlecode.javacpp:javacpp:0.7'
+    implementation 'org.jetbrains:annotations:18.0.0'
+    implementation 'org.minidns:minidns-hla:1.0.0'
+    implementation 'org.minidns:minidns-android21:1.0.0'
+    implementation 'com.google.guava:guava:29.0-jre'
+}
+
+
+
+allprojects {
+    tasks.withType(JavaCompile) {
+        // TODO include deprecations at some point, but currently they are *many*
+        options.compilerArgs << "-Xlint:all" << "-Xlint:-deprecation" << "-Xlint:-dep-ann" << "-Xlint:-serial" << "-Xlint:-this-escape" << "-Xlint:-lossy-conversions"
+    }
+}
+
+
+android {
+
+    compileSdk = 32
+    ndkVersion = "29.0.14206865"
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    sourceSets.main.jniLibs.srcDir 'src/main/libs/'
+
+    defaultConfig {
+        testApplicationId "se.lublin.humla.test"
+        testInstrumentationRunner "android.test.InstrumentationTestRunner"
+        minSdk 23
+    }
+
+
+    // Trigger NDK build on java compilation task.
+    task ndkBuild(type: Exec) {
+        def ndkDir = android.ndkDirectory
+        commandLine "$ndkDir/ndk-build.cmd", '-C', file('src/main/jni/').absolutePath
+    }
+
+
+    lint {
+        abortOnError = true
+        disable 'InvalidPackage', 'MissingTranslation'
+        ignoreWarnings = false
+        quiet = false
+        targetSdk = 32
+    }
+
+    namespace = 'se.lublin.humla'
+    testOptions {
+        targetSdk 32
+    }
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn ndkBuild
+    }
+
+
+}

@@ -1,0 +1,139 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+// Sostituisce archivesBaseName (rimosso in AGP 8.x)
+base.archivesName = "doorphone"
+
+android {
+
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+        targetSdk 25
+        multiDexEnabled true
+        applicationId "se.lublin.mumla.beta"
+        versionCode 89
+        buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
+        testInstrumentationRunner "android.test.InstrumentationTestRunner"
+    }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            // armeabi-v7a → Nexus 7 2012 (Tegra 3, ARMv7)   → doorphone.apk
+            // x86_64      → emulatore Android Studio API 29  → doorphone_emulatore.apk
+            include 'armeabi-v7a', 'x86_64'
+            universalApk false
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (android.hasProperty("signingConfigs") && signingConfigs.hasProperty("beta")) {
+                signingConfig signingConfigs.beta
+            }
+        }
+        debug {
+            minifyEnabled false
+            versionNameSuffix "-debug"
+            if (android.hasProperty("signingConfigs") && signingConfigs.hasProperty("beta")) {
+                signingConfig signingConfigs.beta
+            }
+        }
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            // versionCode basato sul timestamp: forza l'aggiornamento sull'app di distribuzione interna
+            output.versionCodeOverride = System.currentTimeSeconds() / 60
+
+            // Rinomina l'APK in base all'ABI:
+            //   armeabi-v7a → doorphone.apk           (Nexus 7 2012, device reale)
+            //   x86_64      → doorphone_emulatore.apk  (emulatore Android Studio)
+            def abi = output.getFilter(com.android.build.OutputFile.ABI)
+            output.outputFileName = ("x86_64" == abi) ? "doorphone_emulatore.apk" : "doorphone.apk"
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+
+    lint {
+        abortOnError true
+        disable 'InvalidPackage', 'MissingTranslation'
+        explainIssues true
+        ignoreWarnings false
+        quiet false
+    }
+
+    namespace 'se.lublin.mumla'
+}
+
+
+
+buildscript {
+    repositories {
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:9.2.1'
+    }
+}
+
+
+repositories {
+    mavenCentral()
+    google()
+}
+
+
+def signingFile = file 'signing.gradle'
+if (signingFile.exists()) apply from: signingFile
+def signingBetaFile = file 'signing-beta.gradle'
+if (signingBetaFile.exists()) apply from: signingBetaFile
+
+
+allprojects {
+    tasks.withType(JavaCompile) {
+        // TODO include deprecations at some point, but currently they are *many*
+        options.compilerArgs << "-Xlint:all" << "-Xlint:-deprecation" << "-Xlint:-dep-ann" << "-Xlint:-serial" << "-Xlint:-this-escape"
+    }
+}
+
+
+
+dependencies {
+
+    implementation project(":libraries:humla")
+
+    implementation project(':libraries:rtsp-client')
+
+    implementation 'com.loopj.android:android-async-http:1.4.9'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'org.jsoup:jsoup:1.13.1'
+    implementation 'com.google.guava:guava:24.1-jre'
+    implementation 'androidx.preference:preference:1.2.0'
+    implementation 'androidx.preference:preference-ktx:1.2.0'
+
+    implementation "androidx.appcompat:appcompat:1.4.2"
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation 'com.google.android.material:material:1.6.1'
+
+}

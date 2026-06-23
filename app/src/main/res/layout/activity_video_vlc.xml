@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_video_vlc"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+    <FrameLayout
+        android:id="@+id/frameLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="center">
+
+        <com.alexvas.rtsp.widget.RtspSurfaceView
+            android:id="@+id/surface"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_gravity="center"
+            android:layout_centerInParent="true" />
+
+        <TextView
+            android:id="@+id/connection_status_overlay"
+            android:layout_width="54dp"
+            android:layout_height="54dp"
+            android:layout_gravity="top|start"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_connection_status_overlay"
+            android:elevation="12dp"
+            android:gravity="center"
+            android:text="P1"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/button_call"
+                android:layout_width="97dp"
+                android:layout_height="97dp"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="2dp"
+                android:layout_marginLeft="25dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginBottom="27dp"
+                android:clickable="true"
+                android:elevation="8dp"
+                android:focusable="true"
+                android:scaleType="center"
+                android:src="@drawable/ic_call_in"
+                android:visibility="gone"
+                app:backgroundTint="@color/colorPrimary"
+                app:fabCustomSize="97dp" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/button_door_unlock"
+            android:layout_width="97dp"
+            android:layout_height="97dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginStart="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginRight="25dp"
+            android:layout_marginBottom="27dp"
+            android:clickable="true"
+            android:elevation="8dp"
+            android:focusable="true"
+            android:src="@drawable/ic_lock_open"
+            android:visibility="visible"
+            app:backgroundTint="@color/colorPrimary"
+            app:fabCustomSize="97dp" />
+
+    </FrameLayout>
+
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/bg_loader_overlay"
+        android:elevation="12dp"
+        android:indeterminateTint="@android:color/white"
+        android:indeterminateTintMode="src_in"
+        android:padding="20dp"
+        android:visibility="gone" />
+
+
+</RelativeLayout>
+
+

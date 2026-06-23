@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Sfondo del loader (ProgressBar) sovrapposto al video.
+    Cerchio nero semi-trasparente per garantire contrasto contro qualsiasi
+    sfondo video (chiaro o scuro). Lo spinner bianco sopra resta sempre leggibile.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#B3000000" />
+</shape>

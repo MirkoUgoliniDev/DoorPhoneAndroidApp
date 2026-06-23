@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+        <item
+            android:id="@+id/nav_drawer_item_kiosk_status"
+            android:enabled="false"
+            android:icon="@drawable/ic_kiosk_unlocked"
+            android:title="@string/kiosk_mode_off"
+            app:showAsAction="always" />
+
+        <item
+            android:id="@+id/nav_drawer_item_settings"
+            android:icon="@drawable/settings"
+            android:title="@string/settings"
+            app:showAsAction="always" />
+
+        <item
+            android:id="@+id/nav_drawer_item_about"
+            android:icon="@drawable/about"
+            android:title="@string/about"
+            app:showAsAction="always" />
+
+        <item
+            android:id="@+id/nav_drawer_item_reboot"
+            android:icon="@drawable/reboot"
+            android:title="@string/reboot"
+            app:showAsAction="always" />
+
+        <item
+            android:id="@+id/nav_drawer_item_close"
+            android:icon="@drawable/close"
+            android:title="@string/close"
+            app:showAsAction="always" />
+
+</menu>

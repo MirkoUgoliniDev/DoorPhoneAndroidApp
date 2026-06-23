@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/general" android:layout="@layout/preference_category_header" />
+
+    <CheckBoxPreference
+        android:key="stay_awake"
+        android:defaultValue="false"
+        android:title="@string/stay_awake"
+        android:summary="@string/stay_awake_sum" />
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="autoReconnect"
+        android:summary="@string/autoReconnectSum"
+        android:title="@string/autoReconnect" />
+
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="forceTcp"
+        android:summary="@string/forceTcpSum"
+        android:title="@string/forceTcp"/>
+
+</PreferenceScreen>

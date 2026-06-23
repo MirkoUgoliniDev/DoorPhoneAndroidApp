@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_card">
+
+    <!-- Header con gradiente e angoli superiori arrotondati -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_dialog_header"
+        android:paddingTop="26dp"
+        android:paddingBottom="26dp"
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Seleziona il piano"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Identifica questo tablet selezionando il piano corrispondente"
+            android:textColor="#D6DAF5"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:lineSpacingExtra="2dp"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+    <!-- Elenco piani: RadioButton aggiunti via codice -->
+    <RadioGroup
+        android:id="@+id/piano_radio_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="20dp"
+        android:paddingBottom="8dp"
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:orientation="vertical" />
+
+    <!-- Pulsante Conferma -->
+    <Button
+        android:id="@+id/btn_piano_conferma"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:text="CONFERMA"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/bg_dialog_button"
+        android:stateListAnimator="@null"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="22dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp" />
+
+</LinearLayout>
