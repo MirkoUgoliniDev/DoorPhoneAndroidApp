@@ -99,7 +99,7 @@
     </string-array>
 
 
-    <string name="copyright">Copyright &#169; 2014–2017 Andrew Comminos\nCopyright &#169; 2020 Daniel Lublin mumla@lublin.se\n\nhttps://mumla-app.gitlab.io</string>
+    <string name="copyright">Copyright &#169; 2014–2017 Andrew Comminos\nCopyright &#169; 2020 Daniel Lublin mumla@lublin.se\n\nhttps://mumla-app.gitlab.io\n\nModificato da Mirko Ugolini &#8212; DoorPhone</string>
     <string name="project_link">https://mumla-app.gitlab.io</string>
     <string name="acknowledgements_link">https://gitlab.com/quite/mumla/-/graphs/master</string>
     <string name="license_gplv3">GNU General Public License v3.0</string>

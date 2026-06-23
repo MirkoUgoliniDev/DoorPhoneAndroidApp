@@ -53,7 +53,7 @@ import com.doorphone.Settings;
  *     "unlock_command": "unlockdoor"
  *   },
  *   "apk": {
- *     "files": ["mumla.apk"],
+ *     "files": ["doorphone.apk"],
  *     "download_url": "http://192.168.1.54:8080/apk/"
  *   },
  *   "camera": {
@@ -288,8 +288,7 @@ public class RaspberryConfigFetcher {
                     String mumblePassword = firstNonEmpty(
                             optString(mumbleServer, "password"),
                             optString(mumble, "password"),
-                            root.optString("mumble_password", ""),
-                            root.optString("mumla_password", ""));
+                            root.optString("mumble_password", ""));
 
                     /*
                      * Questi valori sono configurazione operativa del device: non sono piu'
