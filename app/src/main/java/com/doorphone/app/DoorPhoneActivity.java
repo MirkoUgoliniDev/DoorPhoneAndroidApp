@@ -52,7 +52,6 @@ import com.doorphone.Settings;
 import com.doorphone.preference.Preferences;
 import com.doorphone.service.IDoorPhoneService;
 import com.doorphone.service.DoorPhoneService;
-import com.doorphone.util.HumlaServiceFragment;
 import com.doorphone.util.HumlaServiceProvider;
 import com.doorphone.util.DoorPhoneTrustStore;
 
@@ -768,16 +767,6 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
     @Override
     public IDoorPhoneService getService() {
         return mService;
-    }
-
-    @Override
-    public void addServiceFragment(HumlaServiceFragment fragment) {
-        //mServiceFragments.add(fragment);
-    }
-
-    @Override
-    public void removeServiceFragment(HumlaServiceFragment fragment) {
-        //mServiceFragments.remove(fragment);
     }
 
 

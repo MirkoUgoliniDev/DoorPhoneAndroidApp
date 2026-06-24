@@ -101,8 +101,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     /** @brief URL dell'endpoint RTSP della telecamera, letto da {@link Settings}. */
     private String mMediaUrl;
 
-    /** @brief Contesto dell'activity (alias di {@code this}, usato in lambda/callback). */
-    private Context _ctx;
 
     /** @brief Gestore dell'audio di sistema (usato per il controllo del volume). */
     private AudioManager mAudioManager;
@@ -147,11 +145,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
      */
     private int mLastKnownRotation = -1;
 
-    /** @brief Getter del contesto. @return Contesto corrente dell'activity. */
-    public Context getCtx() { return _ctx; }
-
-    /** @brief Setter del contesto. @param ctx Contesto da assegnare. */
-    public void setCtx(Context ctx) { _ctx = ctx; }
 
     /** @brief Riferimento al servizio Mumble, ottenuto tramite binding in {@link #mConnection}. */
     DoorPhoneService mService;
@@ -375,7 +368,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
         Log.d(TAG, "ON CREATE");
         Log.d(RING_TAG, "[lifecycle/onCreate] intent=" + inCreate
                 + " hasRingExtra=" + (inCreate != null && inCreate.getBooleanExtra(EXTRA_RING, false)));
-        setCtx(this);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 

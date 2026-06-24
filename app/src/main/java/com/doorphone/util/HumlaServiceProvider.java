@@ -24,6 +24,4 @@ import com.doorphone.service.IDoorPhoneService;
  */
 public interface HumlaServiceProvider {
     IDoorPhoneService getService();
-    void addServiceFragment(HumlaServiceFragment fragment);
-    void removeServiceFragment(HumlaServiceFragment fragment);
 }
