@@ -52,6 +52,12 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         Log.d(TAG, "ON CREATE");
         registerActivityLifecycleCallbacks(this);
         createNotificationChannel();
+
+        // Hardening kiosk via root, applicato a ogni avvio su TUTTI i tablet (niente
+        // intervento manuale via adb/USB): disabilita la gesture doppio-Power->Fotocamera
+        // e l'app Fotocamera/Galleria, che su un citofono dedicato non servono e
+        // rischiano di aprirsi sopra il videocitofono. Vedi DeviceHardening.
+        DeviceHardening.applyAsync();
     }
 
 
