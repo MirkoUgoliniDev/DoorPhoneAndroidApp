@@ -21,20 +21,6 @@
 
 
 
-    <!-- A light Holo shade of blue -->
-    <!-- A light Holo shade of green -->
-    <!-- A light Holo shade of red -->
-    <!-- A dark Holo shade of blue -->
-    <color name="holo_blue_dark">#ff0099cc</color>
-    <!-- A dark Holo shade of green -->
-    <color name="holo_green_dark">#ff669900</color>
-    <!-- A dark Holo shade of red -->
-    <color name="holo_red_dark">#ffcc0000</color>
-    <!-- A Holo shade of purple -->
-    <!-- A light Holo shade of orange -->
-    <!-- A dark Holo shade of orange -->
-    <!-- A really bright Holo shade of blue -->
-
     <!-- Solarized -->
     <color name="solarized_base03">#002b36</color>
     <color name="solarized_base02">#073642</color>

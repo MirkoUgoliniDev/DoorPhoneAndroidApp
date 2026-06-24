@@ -23,7 +23,6 @@
     <string name="connecting_to_server">Connecting to %s</string>
     <string name="perm_denied">Permission denied!</string>
     <string name="connectionRefused">Connection refused</string>
-    <string name="reset_key">Reset Key</string>
     <string name="messageReceived">New message</string>
     <string name="connect">Connect</string>
     <string name="connected">Connected</string>
@@ -56,16 +55,6 @@
     <string name="about_version_title">1.01</string>
     <string name="about_project_name">Doorpi</string>
 
-
-    <plurals name="search_channel_users">
-        <item quantity="one">%d user</item>
-        <item quantity="other">%d users</item>
-    </plurals>
-
-    <plurals name="reconnecting">
-        <item quantity="one">Reconnecting in %d second.</item>
-        <item quantity="other">Reconnecting in %d seconds.</item>
-    </plurals>
 
     <plurals name="notification_unread_many">
         <item quantity="one">%d new message</item>

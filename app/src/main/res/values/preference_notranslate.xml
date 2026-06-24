@@ -30,18 +30,6 @@
 
 
 
-    <string-array name="callModeNames">
-        <item>@string/call_mode_speakerphone</item>
-        <item>@string/call_mode_voice_call</item>
-    </string-array>
-
-    <string-array name="callModeValues">
-        <item>speakerphone</item>
-        <item>voice</item>
-    </string-array>
-
-
-
     <string-array name="audio_per_packet_names">
         <item>10ms</item>
         <item>20ms</item>
@@ -87,17 +75,5 @@
         <item>180</item>
         <item>270</item>
     </string-array>
-
-    <string-array name="camera_stream_type_names">
-        <item>MJPEG (HTTP)</item>
-        <item>RTSP</item>
-    </string-array>
-
-    <string-array name="camera_stream_type_values">
-        <item>mjpeg</item>
-        <item>rtsp</item>
-    </string-array>
-
-
 
 </resources>

@@ -7,12 +7,6 @@
 
     <!-- Theme names -->
 
-    <!-- Call modes -->
-    <string name="call_mode_speakerphone">Speakerphone</string>
-    <string name="call_mode_voice_call">Voice Call</string>
-
-    <!-- Hot corner -->
-
     <!-- About -->
     <string name="about">About</string>
 
@@ -42,8 +36,6 @@
     <string name="inputQuality">Input Quality</string>
     <string name="pttButtonHeight">Push-To-Talk Button height</string>
     <string name="pttButtonHeightSum">Change the height of Push-To-Talk Button.</string>
-    <string name="pressKey">Press a hardware key to bind to push-to-talk.</string>
-    <string name="pressKeyInfo">Note: due to limitations in Android, the app must be open to use hardware key push to talk.</string>
     <string name="halfDuplex">Half Duplex Mode</string>
     <string name="halfDuplexSum">Mutes device sound when using push to talk, removing audio feedback for channel users.</string>
     <string name="handsetMode">Handset Mode</string>
