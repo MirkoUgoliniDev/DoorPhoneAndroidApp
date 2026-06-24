@@ -81,8 +81,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
     /** @brief Preferenze dell'applicazione (singleton). */
     private Settings mSettings;
 
-    /** @brief Gestore delle notifiche chat nella status bar. */
-    private DoorPhoneMessageNotification mMessageNotification;
 
 
     /** @brief {@code true} se il suono PTT (push-to-talk) è abilitato nelle preferenze. */
@@ -441,8 +439,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         // alle View create dal servizio (overlay, dialog).
         setTheme(R.style.Theme_DoorPhone);
 
-        mMessageNotification = new DoorPhoneMessageNotification(DoorPhoneService.this);
-
         if(mSettings.isTextToSpeechEnabled()){
             mTTS = new TextToSpeech(this, mTTSInitListener);
         }
@@ -477,7 +473,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
 
         unregisterObserver(mObserver);
         if(mTTS != null) mTTS.shutdown();
-        mMessageNotification.dismiss();
 
         unregisterNetworkCallback();
 
@@ -534,7 +529,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         Log.d(TAG, "onConnectionDisconnected" );
         is_connected = false;
         user_in_chat.clear();
-        mMessageNotification.dismiss();
     }
 
     // -------------------------------------------------------------------------
@@ -648,10 +642,9 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         return true ;
     }
 
-    /** @brief Rimuove la notifica chat dalla status bar. */
+    /** @brief No-op: il sottosistema di notifiche chat è stato rimosso. */
     @Override
     public void clearChatNotifications() {
-        mMessageNotification.dismiss();
     }
 
     /**

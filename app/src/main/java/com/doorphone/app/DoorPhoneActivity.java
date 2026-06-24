@@ -63,7 +63,6 @@ import com.doorphone.util.DoorPhoneTrustStore;
 @SuppressWarnings("deprecation")
 public class DoorPhoneActivity extends Activity implements HumlaServiceProvider, SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = DoorPhoneActivity.class.getSimpleName();
-    public static final String EXTRA_DRAWER_FRAGMENT = "drawer_fragment";
     private IDoorPhoneService mService;
     private Settings mSettings;
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
