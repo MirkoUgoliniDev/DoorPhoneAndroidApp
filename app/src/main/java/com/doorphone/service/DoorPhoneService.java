@@ -6,10 +6,8 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
@@ -44,7 +42,6 @@ import com.doorphone.R;
 import com.doorphone.Settings;
 import com.doorphone.app.DoorPhoneActivity;
 import com.doorphone.app.MyApp;
-import com.doorphone.service.ipc.TalkBroadcastReceiver;
 import com.doorphone.ui.VideoVLCActivity;
 import com.doorphone.util.HtmlUtils;
 import androidx.core.app.NotificationCompat;
@@ -159,9 +156,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
      * il primo client quando il secondo si autentica con lo stesso certificato.
      */
     private final AtomicBoolean mFirstNetworkCallback = new AtomicBoolean(true);
-
-    /** @brief Receiver per i comandi PTT inviati via broadcast dall'Activity. */
-    private BroadcastReceiver mTalkReceiver;
 
     /** @brief Istanza Text-To-Speech per la lettura ad alta voce dei messaggi chat. */
     private TextToSpeech mTTS;
@@ -455,8 +449,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
             mTTS = new TextToSpeech(this, mTTSInitListener);
         }
 
-        mTalkReceiver = new TalkBroadcastReceiver(this);
-
         registerNetworkCallback();
     }
 
@@ -484,11 +476,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         preferences.unregisterOnSharedPreferenceChangeListener(this);
-        try {
-            unregisterReceiver(mTalkReceiver);
-        } catch (IllegalArgumentException e) {
-            // Ignorato: il receiver potrebbe non essere stato registrato (es. se onConnectionSynchronized non è completato)
-        }
 
         unregisterObserver(mObserver);
         if(mTTS != null) mTTS.shutdown();
@@ -512,7 +499,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
      *
      * Se la sync va a buon fine:
      * - Ripristina lo stato muto/sordo dalle preferenze.
-     * - Registra il {@link TalkBroadcastReceiver} per i comandi PTT.
      */
     @Override
     public void onConnectionSynchronized() {
@@ -530,14 +516,11 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         if(mSettings.isMuted() || mSettings.isDeafened()) {
             setSelfMuteDeafState(mSettings.isMuted(), mSettings.isDeafened());
         }
-
-        registerReceiver(mTalkReceiver, new IntentFilter(TalkBroadcastReceiver.BROADCAST_TALK));
     }
 
     /**
      * @brief Chiamato da Humla quando la connessione viene chiusa (volontariamente o per errore).
      *
-     * - Tenta di deregistrare il TalkReceiver (ignorando se già deregistrato).
      * - Azzera lo stato di connessione e svuota il log messaggi.
      * - Svuota {@link #user_in_chat} per eliminare sessioni stantie: in caso di disconnessione
      *   brusca (WiFi cade, timeout), il server potrebbe non inviare i {@code UserRemove} per
@@ -551,11 +534,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
     public void onConnectionDisconnected(HumlaException e) {
         super.onConnectionDisconnected(e);
         Log.d(TAG, "onConnectionDisconnected" );
-        try {
-            unregisterReceiver(mTalkReceiver);
-        } catch (IllegalArgumentException iae) {
-            // Ignorato: il receiver potrebbe non essere registrato
-        }
         is_connected = false;
         user_in_chat.clear();
         mMessageNotification.dismiss();
