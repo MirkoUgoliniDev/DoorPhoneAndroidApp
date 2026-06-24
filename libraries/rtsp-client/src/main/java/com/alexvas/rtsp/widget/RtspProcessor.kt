@@ -370,7 +370,11 @@ class RtspProcessor(
                     .build()
                 rtspClient.execute()
             } catch (e: Exception) {
-                e.printStackTrace()
+                // Se rtspStopped è true il fallimento è la conseguenza di uno stop volontario
+                // (es. Activity in pausa che chiude il socket durante l'handshake): non è un
+                // errore reale, niente stack trace su System.err. Logghiamo (a livello E con tag
+                // pulito) solo i fallimenti inattesi, preservando la diagnostica per i casi veri.
+                if (!rtspStopped.get()) Log.e(TAG, "RTSP thread failed", e)
                 uiHandler.post { proxyClientListener.onRtspFailed(e.message) }
             } finally {
                 NetUtils.closeSocket(socket)

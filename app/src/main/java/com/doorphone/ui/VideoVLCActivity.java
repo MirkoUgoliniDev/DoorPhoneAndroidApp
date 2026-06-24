@@ -285,6 +285,23 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     private boolean mResumingFromPause = false;
 
     /**
+     * @brief {@code true} mentre è in corso uno stop volontario dello stream RTSP.
+     *
+     * Settato in {@link #stopRtspStream()} (chiamato da {@link #onPause()}) e azzerato
+     * in {@link #startRtspStream()}. Quando lo stream viene fermato durante l'handshake
+     * TCP (pausa rapida ~40ms dopo lo start), il thread RTSP riceve EOF e la libreria
+     * propaga {@code onRtspStatusFailed("Invalid status code -1")}: NON è un errore reale
+     * del server ma l'effetto del teardown volontario. Il flag permette a
+     * {@link RtspStatusListener#onRtspStatusFailed(String)} di declassare quel log da
+     * {@code E/} a {@code D/} senza nascondere i fallimenti RTSP veri (camera irraggiungibile
+     * a schermo acceso e stabile, dove non c'è stato alcuno stop volontario).
+     *
+     * {@code volatile}: settato sull'UI thread ma la callback può essere valutata dopo un
+     * {@code uiHandler.post} interno alla libreria.
+     */
+    private volatile boolean mStoppingIntentionally = false;
+
+    /**
      * @brief Handler per il timeout di sicurezza del loader.
      *
      * Safety net: se le callback RTSP non scattano (stream gia' avviato, errori
@@ -1144,6 +1161,10 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
             // VideoDecoderSurfaceThread e non può essere cambiato a decoder avviato.
             mRtspSurfaceView.setVideoFrameRateStabilization(true);
 
+            // Nuovo start: un eventuale fallimento da qui in poi è un errore RTSP reale,
+            // non più la conseguenza dello stop volontario precedente.
+            mStoppingIntentionally = false;
+
             // Parametri start(requestVideo, requestAudio, requestApplication):
             //   requestVideo      = true  → decodifica e mostra il flusso video H.264
             //   requestAudio      = false → ignora il flusso audio AAC della telecamera:
@@ -1172,6 +1193,10 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     public void stopRtspStream() {
         try {
             if (mRtspSurfaceView != null && mRtspSurfaceView.isStarted()) {
+                // Segnala che il prossimo onRtspStatusFailed è atteso (teardown volontario),
+                // così non viene loggato come errore. Settato PRIMA di stop() perché la
+                // callback di fallimento può arrivare quasi subito sull'UI thread.
+                mStoppingIntentionally = true;
                 mRtspSurfaceView.stop();
                 Log.d(TAG, "stopRtspStream");
             }
@@ -1252,6 +1277,14 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
             @Override
             public void onRtspStatusFailed(String message) {
                 hideLoader();
+                if (mStoppingIntentionally) {
+                    // Fallimento atteso: lo stream è stato fermato volontariamente in onPause
+                    // mentre era ancora in handshake. Consuma il flag (un eventuale fallimento
+                    // REALE successivo verrà loggato come errore) e declassa il log.
+                    mStoppingIntentionally = false;
+                    Log.d(TAG, "RTSP stream interrotto (teardown volontario): " + message);
+                    return;
+                }
                 Log.e(TAG, "RTSP error: " + message);
             }
             /** @brief Nasconde la ProgressBar alla disconnessione RTSP. */
