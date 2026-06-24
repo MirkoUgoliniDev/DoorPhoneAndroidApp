@@ -10,23 +10,18 @@
     <!-- About -->
     <string name="about">About</string>
 
-    <string name="authentication">Authentication</string>
     <string name="audioInputMethod">Transmit Mode</string>
     <string name="audioInputVolume">Microphone Volume</string>
     <string name="audioInputVolumeSum">Microphone volume multiplier used to artificially normalize audio.</string>
     <string name="detectionThreshold">Detection Threshold</string>
     <string name="general">General</string>
     <string name="generalSum">Adjust general settings</string>
-    <string name="appearance">Appearance</string>
     <string name="advancedAudio">Advanced</string>
     <string name="forceTcp">Force TCP</string>
     <string name="forceTcpSum">Whether to force TCP (disable UDP) communications.</string>
     <string name="audio">Audio</string>
     <string name="audioSum">Adjust audio input and output</string>
     <string name="audioSampleRate">Input Sample Rate</string>
-    <string name="defaultUsername">Default Username</string>
-    <string name="defaultUsernameSum">The default username to use when connecting to servers.</string>
-    <string name="defaultUsernameDefault">DoorPhone_User</string>
     <string name="pttSettings">Push to Talk Settings</string>
     <string name="voiceActivitySettings">Voice Activity Settings</string>
     <string name="disableOpus">Disable Opus Codec</string>
@@ -34,8 +29,6 @@
     <string name="autoReconnect">Auto Reconnect</string>
     <string name="autoReconnectSum">Automatically try to re-establish a connection when the server connection is lost.</string>
     <string name="inputQuality">Input Quality</string>
-    <string name="pttButtonHeight">Push-To-Talk Button height</string>
-    <string name="pttButtonHeightSum">Change the height of Push-To-Talk Button.</string>
     <string name="halfDuplex">Half Duplex Mode</string>
     <string name="halfDuplexSum">Mutes device sound when using push to talk, removing audio feedback for channel users.</string>
     <string name="handsetMode">Handset Mode</string>
@@ -45,8 +38,6 @@
     <string name="audio_per_packet">Audio per packet</string>
     <string name="stay_awake">Stay Awake</string>
     <string name="stay_awake_sum">When DoorPhone is open, the screen will not be turned off.</string>
-    <string name="pref_show_user_count">Show Channel User Count</string>
-    <string name="pref_show_user_count_summary">Show a counter with the number of users in a channel subtree.</string>
 
 
 

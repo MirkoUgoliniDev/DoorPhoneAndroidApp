@@ -11,13 +11,10 @@ package com.doorphone.preference;
 
 
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.os.Build;
@@ -25,11 +22,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
-import com.doorphone.BuildConfig;
 import com.doorphone.R;
 import com.doorphone.Settings;
 import com.doorphone.screenoff.ScreenOffAdminReceiver;
@@ -45,10 +38,6 @@ import android.preference.PreferenceScreen;
 
 @SuppressWarnings("deprecation")
 public class Preferences extends PreferenceActivity {
-
-    private static final String VERSION_KEY = "version";
-
-
 
     @SuppressWarnings("deprecation")
     @Override
@@ -113,27 +102,6 @@ public class Preferences extends PreferenceActivity {
         vadCategory.setEnabled(Settings.ARRAY_INPUT_METHOD_VOICE.equals(inputMethod));
     }
 
-
-
-    private static void configureAboutPreferences(Context context, PreferenceScreen screen) {
-        String version = "Unknown";
-
-        try {
-            PackageInfo info = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-            version = info.versionName;
-
-            @SuppressLint("SimpleDateFormat")
-            SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            f.setTimeZone(TimeZone.getTimeZone("UTC"));
-            version += ("\nBeta flavor, versioncode: " + info.versionCode + "\n buildtime: " + f.format(new Date(BuildConfig.TIMESTAMP)) + " UTC");
-
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        Preference versionPreference = screen.findPreference(VERSION_KEY);
-        versionPreference.setSummary(version);
-    }
 
 
     /**
@@ -213,10 +181,6 @@ public class Preferences extends PreferenceActivity {
                 addPreferencesFromResource(R.xml.settings_general);
                 getActivity().setTitle(R.string.general);
 
-            } else if ("authentication".equals(section)) {
-                addPreferencesFromResource(R.xml.settings_authentication);
-                getActivity().setTitle(R.string.authentication);
-
             } else if ("doorpi".equals(section)) {
                 addPreferencesFromResource(R.xml.settings_doorpi);
                 getActivity().setTitle(R.string.doorpi_piano_title);
@@ -226,14 +190,6 @@ public class Preferences extends PreferenceActivity {
                 addPreferencesFromResource(R.xml.settings_audio);
                 configureAudioPreferences(getPreferenceScreen());
                 getActivity().setTitle(R.string.audio);
-
-            } else if ("appearance".equals(section)) {
-                addPreferencesFromResource(R.xml.settings_appearance);
-                getActivity().setTitle(R.string.appearance);
-
-            } else if ("about".equals(section)) {
-                addPreferencesFromResource(R.xml.settings_doorpi);
-                configureAboutPreferences(getPreferenceScreen().getContext(), getPreferenceScreen());
             }
 
 

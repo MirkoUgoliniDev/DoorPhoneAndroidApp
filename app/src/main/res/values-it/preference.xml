@@ -5,7 +5,6 @@
     <!--Hot corner-->
     <!--About-->
     <string name="about">Info su</string>
-    <string name="authentication">Autenticazione</string>
     <string name="audioInputVolume">Volume microfono</string>
     <string name="general">Generale</string>
     <string name="advancedAudio">Avanzato</string>
