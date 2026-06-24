@@ -1106,6 +1106,13 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
      *       dispositivo e il codec Opus — indipendente dallo stream RTSP.
      */
     private void startRtspStream() {
+        // Reset PRIMA di ogni early-return: garantisce che il flag di teardown non resti
+        // "appiccicato" oltre la finestra onPause->onResume. In particolare il ramo
+        // isStarted() sotto esce senza un nuovo start, e senza questo reset un successivo
+        // errore RTSP REALE (camera irraggiungibile a schermo acceso) verrebbe declassato
+        // a D/ e perso. Da qui in poi un eventuale fallimento è un errore vero.
+        mStoppingIntentionally = false;
+
         if (mRtspSurfaceView == null) {
             hideLoader();
             return;
@@ -1160,10 +1167,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
             // Deve essere settato PRIMA di start() — viene passato al costruttore di
             // VideoDecoderSurfaceThread e non può essere cambiato a decoder avviato.
             mRtspSurfaceView.setVideoFrameRateStabilization(true);
-
-            // Nuovo start: un eventuale fallimento da qui in poi è un errore RTSP reale,
-            // non più la conseguenza dello stop volontario precedente.
-            mStoppingIntentionally = false;
 
             // Parametri start(requestVideo, requestAudio, requestApplication):
             //   requestVideo      = true  → decodifica e mostra il flusso video H.264
