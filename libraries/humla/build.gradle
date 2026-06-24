@@ -58,8 +58,6 @@ android {
     sourceSets.main.jniLibs.srcDir 'src/main/libs/'
 
     defaultConfig {
-        testApplicationId "se.lublin.humla.test"
-        testInstrumentationRunner "android.test.InstrumentationTestRunner"
         minSdk 23
     }
 
