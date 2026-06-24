@@ -47,7 +47,6 @@ import se.lublin.humla.protobuf.Mumble;
 import se.lublin.humla.util.HumlaException;
 import se.lublin.humla.util.HumlaObserver;
 import java.io.ByteArrayOutputStream;
-import com.doorphone.BuildConfig;
 import com.doorphone.R;
 import com.doorphone.Settings;
 import com.doorphone.preference.Preferences;
@@ -192,40 +191,6 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
 
 
 
-    private int checkFirstRun() {
-        final String PREFS_NAME = "MyPrefsFile";
-        final String PREF_VERSION_CODE_KEY = "version_code";
-        final int DOESNT_EXIST = -1;
-        int result = 0;
-
-
-        // Get current version code
-        int currentVersionCode = BuildConfig.VERSION_CODE;
-
-        // Get saved version code
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        int savedVersionCode = prefs.getInt(PREF_VERSION_CODE_KEY, DOESNT_EXIST);
-
-        // Check for first run or upgrade
-        if (currentVersionCode == savedVersionCode) {
-            // Normal run: versione non cambiata
-            result=0;
-
-        } else if (savedVersionCode == DOESNT_EXIST) {
-            // Prima installazione (o preferenze cancellate dall'utente)
-            result=1;
-
-        } else if (currentVersionCode > savedVersionCode) {
-            // Aggiornamento dell'app
-            result=2;
-        }
-
-        // Update the shared preferences with the current version code
-        prefs.edit().putInt(PREF_VERSION_CODE_KEY, currentVersionCode).apply();
-
-        return result;
-
-    }
 
 
 

@@ -31,7 +31,6 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -101,9 +100,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
 
     /** @brief URL dell'endpoint RTSP della telecamera, letto da {@link Settings}. */
     private String mMediaUrl;
-
-    /** @brief Layout radice dell'activity. */
-    private RelativeLayout mMainLayout;
 
     /** @brief Contesto dell'activity (alias di {@code this}, usato in lambda/callback). */
     private Context _ctx;
@@ -204,15 +200,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
 
     /** @brief ActionBar dell'activity, usata per mostrare lo stato della connessione Mumble. */
     private ActionBar actionBar;
-
-    /** @brief Contatore di quante volte ha suonato il ring (per debug/diagnostica). */
-    private int ringn = 0;
-
-    /** @brief true dopo aver ricevuto ack-accept-call dal Raspberry. */
-    private boolean mAcceptCallAckReceived = false;
-
-    /** @brief true dopo aver ricevuto ack-close-call dal Raspberry. */
-    private boolean mCloseCallAckReceived = false;
 
     /**
      * @brief Timestamp (ms) dell'ultimo click sul pulsante call, per debounce.
@@ -832,11 +819,9 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
                 Log.d(RING_TAG, "[6a/receiver] -> triggerRing() da broadcast");
                 triggerRing();
             } else if ("ack-accept-call".equals(message)) {
-                mAcceptCallAckReceived = true;
                 handler_ack_timeout.removeCallbacks(runnable_ack_accept_timeout);
                 Log.i(TAG, "ACK accept-call ricevuto - sessione confermata");
             } else if ("ack-close-call".equals(message)) {
-                mCloseCallAckReceived = true;
                 handler_ack_timeout.removeCallbacks(runnable_ack_close_timeout);
                 handler_deferred_mute.removeCallbacks(runnable_deferred_mute);
                 Log.i(TAG, "ACK close-call ricevuto - mute immediato, timer fallback cancellato");
@@ -925,7 +910,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
         } else {
             Log.w(RING_TAG, "[7b/triggerRing] mySounds NULL, suono saltato");
         }
-        ringn++;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         mIncomingCall = true;
         HandleControlVisibility();
@@ -1247,7 +1231,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
      * - Click sul frameLayout: mostra il pulsante di sblocco se nascosto.
      */
     private void initUI() {
-        mMainLayout = (RelativeLayout) findViewById(com.doorphone.R.id.activity_video_vlc);
         FrameLayout frameLayout = (FrameLayout) findViewById(R.id.frameLayout);
         progressBar = findViewById(R.id.progressBar);
         mConnectionStatusOverlay = findViewById(R.id.connection_status_overlay);
@@ -1393,11 +1376,9 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
             // Fuori dal try il comando potrebbe non essere partito (mService null,
             // connessione non stabilita) e il warning "ACK non ricevuto" sarebbe fuorviante.
             if (message.equals("accept-call")) {
-                mAcceptCallAckReceived = false;
                 handler_ack_timeout.removeCallbacks(runnable_ack_accept_timeout);
                 handler_ack_timeout.postDelayed(runnable_ack_accept_timeout, 10000);
             } else if (message.equals("close-call")) {
-                mCloseCallAckReceived = false;
                 handler_ack_timeout.removeCallbacks(runnable_ack_close_timeout);
                 handler_ack_timeout.postDelayed(runnable_ack_close_timeout, 10000);
             }

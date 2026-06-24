@@ -5,7 +5,6 @@ package com.doorphone.screenoff;
 
 import android.content.Context;
 import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
 
 
 
@@ -18,7 +17,6 @@ import android.telephony.TelephonyManager;
 @SuppressWarnings("deprecation")
 public class ScreenOffPhoneListener extends PhoneStateListener {
 	private Context context;
-	private boolean incomingCall;
 
 	public ScreenOffPhoneListener(Context context) {
 		this.context = context;
@@ -27,18 +25,7 @@ public class ScreenOffPhoneListener extends PhoneStateListener {
 
 	@Override
 	public void onCallStateChanged(int state, String incomingNumber) {
-		switch (state) {
-		case TelephonyManager.CALL_STATE_RINGING:
-			incomingCall = true;
-			break;
-		case TelephonyManager.CALL_STATE_OFFHOOK:
-			//turnScreenOff(incomingCall ? 400 : 1200);
-			incomingCall = false;
-			break;
-		default:
-			incomingCall = false;
-			break;
-		}
+		// No-op: l'azione di blocco schermo su cambio stato chiamata è disattivata.
 	}
 
 

@@ -84,8 +84,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
     /** @brief Gestore delle notifiche chat nella status bar. */
     private DoorPhoneMessageNotification mMessageNotification;
 
-    /** @brief WakeLock di prossimità (non usato attualmente, riservato per future implementazioni). */
-    private PowerManager.WakeLock mProximityLock;
 
     /** @brief {@code true} se il suono PTT (push-to-talk) è abilitato nelle preferenze. */
     private boolean mPTTSoundEnabled;
@@ -837,22 +835,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
             return;
         }
         sendUserTextMessage(user_session, message);
-    }
-
-    /**
-     * @brief Smuta e sorda l'utente locale, attivando la trasmissione audio.
-     * Chiamato dall'Activity quando l'utente accetta la chiamata.
-     */
-    public void unmute(){
-        setSelfMuteDeafState(false, false);
-    }
-
-    /**
-     * @brief Muta e assorda l'utente locale, disattivando la trasmissione audio.
-     * Chiamato dall'Activity quando la chiamata termina.
-     */
-    public void mute(){
-        setSelfMuteDeafState(true, true);
     }
 
     // -------------------------------------------------------------------------

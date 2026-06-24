@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Gravity;
 import java.util.HashSet;
 import java.util.Set;
 import se.lublin.humla.Constants;
@@ -45,12 +44,6 @@ public class Settings {
     public static final Integer DEFAULT_PUSH_KEY = -1;
 
     public static final String PREF_HOT_CORNER_KEY = "hotCorner";
-    public static final String ARRAY_HOT_CORNER_NONE = "none";
-    public static final String ARRAY_HOT_CORNER_TOP_LEFT = "topLeft";
-    public static final String ARRAY_HOT_CORNER_BOTTOM_LEFT = "bottomLeft";
-    public static final String ARRAY_HOT_CORNER_TOP_RIGHT = "topRight";
-    public static final String ARRAY_HOT_CORNER_BOTTOM_RIGHT = "bottomRight";
-    public static final String DEFAULT_HOT_CORNER = ARRAY_HOT_CORNER_NONE;
 
     public static final String PREF_PUSH_BUTTON_HIDE_KEY = "hidePtt";
     public static final Boolean DEFAULT_PUSH_BUTTON_HIDE = false;
@@ -85,10 +78,6 @@ public class Settings {
     public static final String ARRAY_THEME_SOLARIZED_LIGHT = "solarizedLight";
     public static final String ARRAY_THEME_SOLARIZED_DARK = "solarizedDark";
 
-    public static final String PREF_PTT_BUTTON_HEIGHT = "pttButtonHeight";
-    public static final int DEFAULT_PTT_BUTTON_HEIGHT = 150;
-
-
     /**
      * @brief Certificato client PKCS#12 codificato in Base64, salvato direttamente
      * in SharedPreferences (Base64).
@@ -96,8 +85,6 @@ public class Settings {
      */
     public static final String PREF_CERT_DATA = "certificateData";
 
-    public static final String PREF_DEFAULT_USERNAME = "defaultUsername";
-    public static final String DEFAULT_DEFAULT_USERNAME = "DoorPhone_User"; // funny var name
 
     public static final String PREF_FORCE_TCP = "forceTcp";
     public static final Boolean DEFAULT_FORCE_TCP = false;
@@ -133,12 +120,6 @@ public class Settings {
     public static final String PREF_STAY_AWAKE = "stay_awake";
     public static final boolean DEFAULT_STAY_AWAKE = false;
 
-    public static final String PREF_SHOW_USER_COUNT = "show_user_count";
-    public static final boolean DEFAULT_SHOW_USER_COUNT = false;
-
-    public static final String PREF_START_UP_IN_PINNED_MODE = "startUpInPinnedMode";
-    public static final boolean DEFAULT_START_UP_IN_PINNED_MODE = false;
-
     static {
         ARRAY_INPUT_METHODS = new HashSet<String>();
         ARRAY_INPUT_METHODS.add(ARRAY_INPUT_METHOD_VOICE);
@@ -165,7 +146,6 @@ public class Settings {
     public static final boolean DEFAULT_PREF_HIDE_STATUS_BAR = false;
 
     public static final String PREF_DOORPI_CAMERA_FORMAT = "camera_format";
-    public static final String DEFAULT_PREF_DOORPI_CAMERA_FORMAT = "rtsp";
 
     public static final String PREF_CAMERA_USERNAME = "camera_username";
     public static final String DEFAULT_PREF_CAMERA_USERNAME = "";
@@ -222,25 +202,10 @@ public class Settings {
 
 
 
-    public static final String PREF_SHOW_BUTTON_CALL ="show_button_call";
-    public static final boolean DEFAULT_SHOW_BUTTON_CALL =  true;
-
-    public static final String PREF_SHOW_BUTTON_UNLOCK ="show_button_unlock";
-    public static final boolean DEFAULT_SHOW_BUTTON_UNLOCK = true;
-
     public static final String PREF_CMD_UNLOCK ="cmd_unlock";
     public static final String DEFAULT_PREF_CMD_UNLOCK = "unlockdoor";
 
 
-    public static final String PREF_CMD_INSIDE_LIGHT = "cmd_insidelight";
-    public static final String DEFAULT_PREF_INSIDE_LIGHT = "device1";
-
-    public static final String PREF_CMD_GET_ALL_DEVICE_STATUS = "cmd_getalldevicestatus";
-    public static final String DEFAULT_GET_ALL_DEVICE_STATUS = "getalldevicestatus";
-
-
-    public static final String PREF_CMD_GET_DEVICE_STATUS = "cmd_getdevicestatus";
-    public static final String DEFAULT_GET_DEVICE_STATUS = "getdevicestatus";
 
 
 
@@ -328,36 +293,6 @@ public class Settings {
         return preferences.getInt(PREF_PUSH_KEY, DEFAULT_PUSH_KEY);
     }
 
-    public String getHotCorner() {
-        return preferences.getString(PREF_HOT_CORNER_KEY, DEFAULT_HOT_CORNER);
-    }
-
-    /**
-     * Returns whether or not the hot corner is enabled.
-     * @return true if a hot corner should be shown.
-     */
-    public boolean isHotCornerEnabled() {
-        return !ARRAY_HOT_CORNER_NONE.equals(preferences.getString(PREF_HOT_CORNER_KEY, DEFAULT_HOT_CORNER));
-    }
-
-    /**
-     * Returns the view gravity of the hot corner, or 0 if hot corner is disabled.
-     * @return A {@link android.view.Gravity} value, or 0 if disabled.
-     */
-    public int getHotCornerGravity() {
-        String hc = getHotCorner();
-        if(ARRAY_HOT_CORNER_BOTTOM_LEFT.equals(hc)) {
-            return Gravity.LEFT | Gravity.BOTTOM;
-        } else if(ARRAY_HOT_CORNER_BOTTOM_RIGHT.equals(hc)) {
-            return Gravity.RIGHT | Gravity.BOTTOM;
-        } else if(ARRAY_HOT_CORNER_TOP_LEFT.equals(hc)) {
-            return Gravity.LEFT | Gravity.TOP;
-        } else if(ARRAY_HOT_CORNER_TOP_RIGHT.equals(hc)) {
-            return Gravity.RIGHT | Gravity.TOP;
-        }
-        return 0;
-    }
-
     /**
      * @return the resource ID of the user-defined theme.
      */
@@ -372,15 +307,6 @@ public class Settings {
         else if(ARRAY_THEME_SOLARIZED_DARK.equals(theme))
             return R.style.Theme_DoorPhone_Solarized_Dark;
         return -1;
-    }
-
-    /* @return the height of PTT button */
-    public int getPTTButtonHeight() {
-        return preferences.getInt(Settings.PREF_PTT_BUTTON_HEIGHT, DEFAULT_PTT_BUTTON_HEIGHT);
-    }
-
-    public String getDefaultUsername() {
-        return preferences.getString(PREF_DEFAULT_USERNAME, DEFAULT_DEFAULT_USERNAME);
     }
 
     public boolean isPushToTalkToggle() {
@@ -494,30 +420,6 @@ public class Settings {
         }
     }
 
-    /**
-     * @brief Ritorna true se esiste un certificato client utilizzabile.
-     * Controlla prima il nuovo percorso SharedPreferences, poi il vecchio ID DB
-     * (per compatibilità con installazioni precedenti).
-     */
-    public boolean isUsingCertificate() {
-        return getCertificateBytes() != null;
-    }
-
-    /**
-     * @return true if the user count should be shown next to channels.
-     */
-    public boolean shouldShowUserCount() {
-        return preferences.getBoolean(PREF_SHOW_USER_COUNT, DEFAULT_SHOW_USER_COUNT);
-    }
-
-    public boolean shouldStartUpInPinnedMode() {
-        return preferences.getBoolean(PREF_START_UP_IN_PINNED_MODE, DEFAULT_START_UP_IN_PINNED_MODE);
-    }
-
-
-
-
-
     /** @return Piano/identificativo dell'unità (es. "PIANO4") usato come label nell'ActionBar. */
     public String getDoorPiPiano() {
         String value ="";
@@ -600,18 +502,6 @@ public class Settings {
 
 
     /**
-     * @brief URL dell'endpoint di configurazione del Raspberry Pi.
-     *
-     * Viene usato da {@link com.doorphone.app.RaspberryConfigFetcher} al boot
-     * per recuperare i parametri dello stream video (endpoint, username, password).
-     *
-     * @return URL configurazione (es. http://192.168.1.54:8080/config/).
-     */
-    public String getRaspberryConfigUrl() {
-        return preferences.getString(PREF_RASPBERRY_CONFIG_URL, DEFAULT_PREF_RASPBERRY_CONFIG_URL);
-    }
-
-    /**
      * @brief URL dello stream video della telecamera.
      *
      * Valore popolato a runtime da {@link com.doorphone.app.RaspberryConfigFetcher}
@@ -621,14 +511,6 @@ public class Settings {
      */
     public String getCameraEndPoint() {
         return preferences.getString(PREF_CAMERA_ENDPOINT, DEFAULT_PREF_CAMERA_ENDPOINT);
-    }
-
-    /**
-     * @brief Tipo di stream video della telecamera.
-     * @return "mjpeg" per stream HTTP MJPEG, "rtsp" per stream RTSP.
-     */
-    public String getCameraStreamType() {
-        return preferences.getString(PREF_DOORPI_CAMERA_FORMAT, DEFAULT_PREF_DOORPI_CAMERA_FORMAT);
     }
 
     /**
@@ -688,40 +570,9 @@ public class Settings {
 
 
 
-    /** @return true se il pulsante Chiama deve essere visibile. */
-    public boolean shouldShowButtonCall() {
-        return preferences.getBoolean(PREF_SHOW_BUTTON_CALL, DEFAULT_SHOW_BUTTON_CALL);
-    }
-
-
-
-    /** @return true se il pulsante Sblocca Porta deve essere visibile. */
-    public boolean shouldShowButtonUnlock() {
-        return preferences.getBoolean(PREF_SHOW_BUTTON_UNLOCK, DEFAULT_SHOW_BUTTON_UNLOCK);
-    }
-
-
-
-
     /** @return Comando DoorPi per sbloccare la porta. */
     public String getCMDUnlock() {
         return preferences.getString(PREF_CMD_UNLOCK, DEFAULT_PREF_CMD_UNLOCK);
-    }
-
-    /** @return Comando DoorPi per ottenere lo stato di tutti i dispositivi (risponde JSON). */
-    public String getCMDGetAllDeviceStatus() {
-        return  preferences.getString(PREF_CMD_GET_ALL_DEVICE_STATUS, DEFAULT_GET_ALL_DEVICE_STATUS) ;
-    }
-
-
-    /** @return Comando DoorPi per accendere la luce interna. */
-    public String getCMDLightInSide_on() {
-        return "setdevicestatus&D=" + preferences.getString(PREF_CMD_INSIDE_LIGHT, DEFAULT_PREF_INSIDE_LIGHT) + "&S=on";
-    }
-
-    /** @return Comando DoorPi per spegnere la luce interna. */
-    public String getCMDLightInside_off() {
-        return "setdevicestatus&D=" + preferences.getString(PREF_CMD_INSIDE_LIGHT, DEFAULT_PREF_INSIDE_LIGHT) + "&S=off";
     }
 
     // TODO  MIRKO:

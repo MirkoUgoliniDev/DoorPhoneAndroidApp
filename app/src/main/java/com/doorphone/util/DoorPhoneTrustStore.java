@@ -46,10 +46,6 @@ public class DoorPhoneTrustStore {
         fos.close();
     }
 
-    public static void clearTrustStore(Context context) {
-        context.deleteFile(STORE_FILE);
-    }
-
     /**
      * Gets the app's trust store path.
      * @return null if the store has not yet been initialized, or the absolute path if it has.
