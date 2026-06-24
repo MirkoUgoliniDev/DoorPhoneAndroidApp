@@ -46,13 +46,6 @@ import android.preference.PreferenceScreen;
 @SuppressWarnings("deprecation")
 public class Preferences extends PreferenceActivity {
 
-    public static final String ACTION_PREFS_GENERAL = "com.doorphone.app.PREFS_GENERAL";
-    public static final String ACTION_PREFS_AUTHENTICATION = "com.doorphone.app.PREFS_AUTHENTICATION";
-    public static final String ACTION_PREFS_AUDIO = "com.doorphone.app.PREFS_AUDIO";
-    public static final String ACTION_PREFS_APPEARANCE = "com.doorphone.app.PREFS_APPEARANCE";
-    public static final String ACTION_PREFS_ABOUT = "com.doorphone.app.PREFS_ABOUT";
-    public static final String ACTION_PREFS_DOORPI = "com.doorphone.app.PREFS_DOORPI";
-
     private static final String VERSION_KEY = "version";
 
 
@@ -64,29 +57,6 @@ public class Preferences extends PreferenceActivity {
 
 
         setTheme(Settings.getInstance(this).getTheme());
-
-        // Legacy preference section handling
-        String action = getIntent().getAction();
-
-        if (action != null) {
-            if (ACTION_PREFS_GENERAL.equals(action)) {
-                addPreferencesFromResource(R.xml.settings_general);
-            } else if (ACTION_PREFS_AUTHENTICATION.equals(action)) {
-                addPreferencesFromResource(R.xml.settings_authentication);
-            } else if (ACTION_PREFS_AUDIO.equals(action)) {
-                addPreferencesFromResource(R.xml.settings_audio);
-                configureAudioPreferences(getPreferenceScreen());
-            } else if (ACTION_PREFS_APPEARANCE.equals(action)) {
-                addPreferencesFromResource(R.xml.settings_appearance);
-            } else if (ACTION_PREFS_DOORPI.equals(action)) {
-                addPreferencesFromResource(R.xml.settings_doorpi);
-                configureAboutPreferences(this, getPreferenceScreen());
-                configureDoorPiPreferences(this, getPreferenceScreen());
-            }
-
-        }
-
-
     }
 
 

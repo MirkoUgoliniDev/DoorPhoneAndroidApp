@@ -29,7 +29,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:text="@string/about_version_title"
-            android:textColor="@color/cardview_dark_background" />
+            android:textColor="@color/about_text_secondary" />
 
         <TextView
             android:id="@+id/about_project_version"
@@ -41,13 +41,13 @@
             android:layout_height="match_parent"
             android:paddingTop="10dp"
             android:text="@string/about_license_title"
-            android:textColor="@color/cardview_dark_background" />
+            android:textColor="@color/about_text_secondary" />
 
         <View
             android:layout_width="fill_parent"
             android:layout_height="1dip"
             android:layout_marginTop="30dp"
-            android:background="@color/cardview_dark_background" />
+            android:background="@color/about_text_secondary" />
 
         <TextView
             android:layout_width="match_parent"
@@ -64,14 +64,14 @@
             android:layout_height="match_parent"
             android:paddingTop="10dp"
             android:text="@string/about_title_mail"
-            android:textColor="@color/cardview_dark_background" />
+            android:textColor="@color/about_text_secondary" />
 
 
         <View
             android:layout_width="fill_parent"
             android:layout_height="1dip"
             android:layout_marginTop="30dp"
-            android:background="@color/cardview_dark_background" />
+            android:background="@color/about_text_secondary" />
 
     </LinearLayout>
 

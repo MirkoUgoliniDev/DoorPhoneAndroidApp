@@ -31,5 +31,8 @@
     <color name="solarized_base2">#eee8d5</color>
     <color name="solarized_base3">#fdf6e3</color>
 
+    <!-- Testo secondario nella schermata About (ex @color/cardview_dark_background) -->
+    <color name="about_text_secondary">#FF424242</color>
+
     <!-- Ripple talk states -->
 </resources>
