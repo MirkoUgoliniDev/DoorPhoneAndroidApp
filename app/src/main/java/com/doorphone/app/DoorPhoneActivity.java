@@ -288,7 +288,11 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
     private HumlaObserver mObserver = new HumlaObserver() {
         @Override
         public void onConnected() {
-            updateConnectionState(getService());
+            // Unico punto in cui e' lecito aprire VideoVLCActivity: e' avvenuta una
+            // NUOVA connessione (cold start o riconnessione). Il path di "catch-up"
+            // (onServiceConnected su servizio gia' CONNECTED) NON deve riaprire il video,
+            // altrimenti rilancia VideoVLCActivity ad ogni rientro in foreground.
+            updateConnectionState(getService(), true);
         }
 
         @Override
@@ -542,6 +546,13 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
      public void openVideoStream(){
         Intent vIntent = new Intent(this, com.doorphone.ui.VideoVLCActivity.class);
         vIntent.putExtra("key","change_videoformat");
+        // REORDER_TO_FRONT + SINGLE_TOP: se VideoVLCActivity e' gia' nello stack la
+        // riportiamo in primo piano riusando l'istanza, invece di crearne una nuova
+        // sopra la precedente. Senza questi flag, ogni chiamata creava un'istanza
+        // aggiuntiva (onCreate/onDestroy a raffica) con conseguente start/stop dello
+        // stream RTSP entro pochi ms e l'errore "Invalid status code -1".
+        // Coerente con DoorPhoneService.Ring() e con bringActivityForeground().
+        vIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(vIntent);
      }
 
@@ -642,7 +653,14 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
      * @param service A bound IHumlaService.
      */
     private void updateConnectionState(IHumlaService service) {
-        Log.d(TAG, "updateConnectionState — state=" + (mService != null ? mService.getConnectionState() : "mService null"));
+        // Default: catch-up / aggiornamento di stato che NON deve aprire il video.
+        // Solo onConnected() (nuova connessione) passa allowOpenVideo=true.
+        updateConnectionState(service, false);
+    }
+
+    private void updateConnectionState(IHumlaService service, boolean allowOpenVideo) {
+        Log.d(TAG, "updateConnectionState — state=" + (mService != null ? mService.getConnectionState() : "mService null")
+                + " allowOpenVideo=" + allowOpenVideo);
 
         if (mConnectingDialog != null){
             mConnectingDialog.dismiss();
@@ -680,7 +698,11 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
             case CONNECTED:
                 // TODO: MIRKO
                 Log.d(TAG, "CONNECTED !!!");
-                openVideoStream();
+                if (allowOpenVideo) {
+                    openVideoStream();
+                } else {
+                    Log.d(TAG, "CONNECTED — catch-up (allowOpenVideo=false), non riapro VideoVLCActivity");
+                }
                 mSettings.setMutedAndDeafened(false, false);
                 break;
 
