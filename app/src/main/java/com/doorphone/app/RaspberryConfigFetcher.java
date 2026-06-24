@@ -15,7 +15,6 @@ import android.os.Handler;
 import android.os.Looper;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.TimeZone;

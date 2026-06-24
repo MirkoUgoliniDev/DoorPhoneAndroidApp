@@ -6,7 +6,6 @@ package com.doorphone.screenoff;
 import android.content.Context;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import com.doorphone.ui.VideoVLCActivity;
 
 
 

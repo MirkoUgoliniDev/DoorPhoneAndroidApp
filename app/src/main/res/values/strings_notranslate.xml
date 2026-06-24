@@ -4,5 +4,4 @@
 <resources>
     <string name="app_name">Doorpi2</string>
     <string name="notification_message">%1$s: %2$s</string>
-    <string name="certificate_export_format">doorphone_%s.p12</string>
 </resources>
