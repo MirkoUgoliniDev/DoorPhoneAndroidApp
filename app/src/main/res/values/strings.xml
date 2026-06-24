@@ -26,7 +26,6 @@
     <string name="status_notify_muted_and_deafened">Muted and deafened.</string>
     <string name="status_notify_muted">Muted.</string>
     <string name="close">Close</string>
-    <string name="action_settings">Settings</string>
     <string name="reconnect">Reconnect</string>
     <string name="reconnect_dialog_message">You are already connected to a server. Connect to this server instead?</string>
     <string name="tts_failed">Could not start TTS</string>

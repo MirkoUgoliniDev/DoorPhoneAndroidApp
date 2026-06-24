@@ -8,7 +8,6 @@
     <string name="connected">Connesso</string>
     <string name="unknown">Sconosciuto</string>
     <string name="close">Chiudi</string>
-    <string name="action_settings">Impostazioni</string>
     <string name="reconnect">Riconnetti</string>
     <string name="invalid_password">Password non valida.</string>
 </resources>
