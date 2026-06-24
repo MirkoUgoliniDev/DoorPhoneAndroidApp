@@ -30,16 +30,12 @@ import android.widget.Toast;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import se.lublin.humla.Constants;
 import se.lublin.humla.HumlaService;
 import se.lublin.humla.exception.AudioException;
 import se.lublin.humla.model.IMessage;
-import se.lublin.humla.model.Message;
 import se.lublin.humla.model.IUser;
 import se.lublin.humla.model.TalkState;
 import se.lublin.humla.util.HumlaException;
@@ -102,9 +98,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
 
     /** @brief {@code true} se l'errore di connessione è già stato mostrato all'utente. */
     private boolean mErrorShown;
-
-    /** @brief Log dei messaggi chat della sessione corrente. Azzerato alla disconnessione. */
-    private List<IChatMessage> mMessageLog;
 
     /**
      * @brief Indica se la connessione Mumble è attiva e sincronizzata.
@@ -382,33 +375,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         }
 
         /**
-         * @brief Aggiunge un messaggio informativo al log chat.
-         * @param message Testo del messaggio.
-         */
-        @Override
-        public void onLogInfo(String message) {
-            mMessageLog.add(new IChatMessage.InfoMessage(IChatMessage.InfoMessage.Type.INFO, message));
-        }
-
-        /**
-         * @brief Aggiunge un messaggio di warning al log chat.
-         * @param message Testo del warning.
-         */
-        @Override
-        public void onLogWarning(String message) {
-            mMessageLog.add(new IChatMessage.InfoMessage(IChatMessage.InfoMessage.Type.WARNING, message));
-        }
-
-        /**
-         * @brief Aggiunge un messaggio di errore al log chat.
-         * @param message Testo dell'errore.
-         */
-        @Override
-        public void onLogError(String message) {
-            mMessageLog.add(new IChatMessage.InfoMessage(IChatMessage.InfoMessage.Type.ERROR, message));
-        }
-
-        /**
          * @brief Chiamato quando il server Mumble nega un'operazione per mancanza di permessi.
          * Non implementato: nell'app kiosk i permessi sono fissi.
          * @param reason Motivo del rifiuto.
@@ -483,7 +449,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         // alle View create dal servizio (overlay, dialog).
         setTheme(R.style.Theme_DoorPhone);
 
-        mMessageLog = new ArrayList<>();
         mMessageNotification = new DoorPhoneMessageNotification(DoorPhoneService.this);
 
         if(mSettings.isTextToSpeechEnabled()){
@@ -527,7 +492,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
 
         unregisterObserver(mObserver);
         if(mTTS != null) mTTS.shutdown();
-        mMessageLog = null;
         mMessageNotification.dismiss();
 
         unregisterNetworkCallback();
@@ -594,7 +558,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         }
         is_connected = false;
         user_in_chat.clear();
-        clearMessageLog();
         mMessageNotification.dismiss();
     }
 
@@ -825,30 +788,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Log messaggi
-    // -------------------------------------------------------------------------
-
-    /**
-     * @brief Restituisce il log messaggi della sessione corrente come lista non modificabile.
-     * @return Lista immutabile di {@link IChatMessage}.
-     */
-    @Override
-    public List<IChatMessage> getMessageLog() {
-        return Collections.unmodifiableList(mMessageLog);
-    }
-
-    /**
-     * @brief Svuota il log messaggi. Chiamato alla disconnessione.
-     * Controlla che il log non sia null (può essere null dopo {@link #onDestroy()}).
-     */
-    @Override
-    public void clearMessageLog() {
-        if (mMessageLog != null) {
-            mMessageLog.clear();
-        }
-    }
-
     /**
      * @brief Sopprime le notifiche chat (non implementato in questa app kiosk).
      * @param suppressNotifications {@code true} per sopprimere.
@@ -936,41 +875,6 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
      */
     public void mute(){
         setSelfMuteDeafState(true, true);
-    }
-
-    /**
-     * @brief Invia un messaggio testuale diretto a un utente per session ID e lo aggiunge al log.
-     *
-     * Override di {@link HumlaService#sendUserTextMessage(int, String)} per registrare
-     * il messaggio inviato nel log chat locale.
-     *
-     * @param session ID di sessione Mumble del destinatario.
-     * @param message Testo del messaggio.
-     * @return Oggetto {@link Message} creato da HumlaService.
-     */
-    @Override
-    public Message sendUserTextMessage(int session, String message) {
-        Message msg = super.sendUserTextMessage(session, message);
-        mMessageLog.add(new IChatMessage.TextMessage(msg));
-        return msg;
-    }
-
-    /**
-     * @brief Invia un messaggio testuale a un canale e lo aggiunge al log.
-     *
-     * Override di {@link HumlaService#sendChannelTextMessage(int, String, boolean)} per
-     * registrare il messaggio nel log chat locale.
-     *
-     * @param channel ID del canale destinatario.
-     * @param message Testo del messaggio.
-     * @param tree    {@code true} per inviare a tutto il sottoalbero dei canali.
-     * @return Oggetto {@link Message} creato da HumlaService.
-     */
-    @Override
-    public Message sendChannelTextMessage(int channel, String message, boolean tree) {
-        Message msg = super.sendChannelTextMessage(channel, message, tree);
-        mMessageLog.add(new IChatMessage.TextMessage(msg));
-        return msg;
     }
 
     // -------------------------------------------------------------------------
