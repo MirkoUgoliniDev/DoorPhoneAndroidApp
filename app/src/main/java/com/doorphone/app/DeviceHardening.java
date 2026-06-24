@@ -74,7 +74,15 @@ final class DeviceHardening {
                 proc.destroy();
                 Log.w(TAG, label + " = TIMEOUT (>3s)");
             } else {
-                Log.d(TAG, label + " = OK (exit " + proc.exitValue() + ")");
+                int exit = proc.exitValue();
+                if (exit == 0) {
+                    Log.d(TAG, label + " = OK");
+                } else {
+                    // exit != 0: comando fallito (es. pacchetto inesistente su un device
+                    // diverso, su non concesso). Logghiamo come warning per non far credere
+                    // che sia andato a buon fine.
+                    Log.w(TAG, label + " = FALLITO (exit " + exit + ")");
+                }
             }
         } catch (Exception e) {
             Log.w(TAG, label + " = ERRORE: " + e.getMessage());
