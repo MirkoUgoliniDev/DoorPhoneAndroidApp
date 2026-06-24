@@ -3,9 +3,6 @@
 
 <resources>
 
-    <!-- Drawer pane -->
-    <string name="drawer_not_connected">Not Connected</string>
-
     <!-- Chat formatting -->
     <string name="chat_message_tts_short_link">(Link to %1$s)</string>
 
@@ -23,7 +20,6 @@
     <string name="connecting_to_server">Connecting to %s</string>
     <string name="perm_denied">Permission denied!</string>
     <string name="connectionRefused">Connection refused</string>
-    <string name="messageReceived">New message</string>
     <string name="connect">Connect</string>
     <string name="connected">Connected</string>
     <string name="unknown">Unknown</string>
@@ -54,11 +50,5 @@
     <string name="about_title_mail">mirko.ugolini@gmail.com</string>
     <string name="about_version_title">1.01</string>
     <string name="about_project_name">Doorpi</string>
-
-
-    <plurals name="notification_unread_many">
-        <item quantity="one">%d new message</item>
-        <item quantity="other">%d new messages</item>
-    </plurals>
 
 </resources>

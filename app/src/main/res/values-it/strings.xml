@@ -1,25 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-    <!--Drawer pane-->
-    <string name="drawer_not_connected">Non connesso</string>
-
-    <!--Chat formatting-->
-
-    <!--User menu-->
-
-    <!--Channel menu-->
-
-    <!--Comment Fragment-->
-
-    <!--Server Info Fragment-->
-
-    <!--Server matching-->
-
     <!--Common-->
     <string name="connecting_to_server">Connessione a %s</string>
     <string name="perm_denied">Permesso negato!</string>
     <string name="connectionRefused">Connessione rifiutata</string>
-    <string name="messageReceived">Nuovo messaggio</string>
     <string name="connect">Connetti</string>
     <string name="connected">Connesso</string>
     <string name="unknown">Sconosciuto</string>
@@ -27,9 +11,4 @@
     <string name="action_settings">Impostazioni</string>
     <string name="reconnect">Riconnetti</string>
     <string name="invalid_password">Password non valida.</string>
-
-    <plurals name="notification_unread_many">
-        <item quantity="one">%d nuovo messaggio</item>
-        <item quantity="other">%d nuovi messaggi</item>
-    </plurals>
 </resources>
