@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
@@ -16,8 +17,10 @@ import android.util.Log;
 
 import java.util.Locale;
 
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import com.doorphone.Settings;
+import com.doorphone.service.DoorPhoneService;
 
 /**
  * @brief Classe Application principale dell'app DoorPhone.
@@ -52,6 +55,22 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         Log.d(TAG, "ON CREATE");
         registerActivityLifecycleCallbacks(this);
         createNotificationChannel();
+
+        // B1: il foreground service deve vivere INDIPENDENTEMENTE dal binding delle Activity.
+        // Finora DoorPhoneService veniva creato solo da bindService(BIND_AUTO_CREATE) e
+        // "startato" (startService) solo dentro ServerConnectTask, cioe' unicamente quando
+        // onServiceConnected chiama Connect() (stato DISCONNECTED). Nelle finestre in cui
+        // Connect() NON parte (catch-up con servizio gia' CONNECTED, dialog piano-IP non
+        // configurato) il servizio era tenuto vivo SOLO dal bind: all'unbind di onPause il
+        // refcount andava a 0 -> onDestroy -> connessione Mumble persa.
+        // Avviarlo qui con un intent "nudo" (nessuna action, nessun extra: onStartCommand
+        // di HumlaService salta configureExtras e NON chiama connect()) lo rende STARTED,
+        // quindi sopravvive all'unbind finche' non viene fermato esplicitamente. La
+        // connessione Mumble continua a partire solo via ACTION_CONNECT da ServerConnectTask.
+        // DoorPhoneService.onCreate chiama subito startForeground(), quindi i 5s richiesti
+        // da startForegroundService sono rispettati (nessun ANR); ContextCompat fa il
+        // fallback a startService su API < 26 (la flotta e' Android 7.1).
+        ContextCompat.startForegroundService(this, new Intent(this, DoorPhoneService.class));
 
         // Hardening kiosk via root, applicato a ogni avvio su TUTTI i tablet (niente
         // intervento manuale via adb/USB): disabilita la gesture doppio-Power->Fotocamera

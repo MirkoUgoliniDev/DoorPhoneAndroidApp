@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import cz.msebera.android.httpclient.Header;
 import com.doorphone.Settings;
@@ -91,6 +92,24 @@ import com.doorphone.Settings;
 public class RaspberryConfigFetcher {
 
     private static final String TAG = "RaspberryConfigFetcher";
+
+    /**
+     * @brief I3: l'orologio ({@code server_time}) viene sincronizzato una sola volta
+     * per avvio del processo. {@code fetch()} gira a ogni ritorno in foreground e
+     * riscrivere l'ora ogni volta poteva farla "saltare" durante una chiamata. Il flag
+     * si resetta da solo al riavvio del processo (cioe' una nuova sync per boot).
+     *
+     * @note Volume e luminosita' restano invece forzati a ogni fetch by design (lockdown
+     * kiosk: l'utente non deve poterli cambiare in modo permanente).
+     */
+    private static final AtomicBoolean sSystemTimeApplied = new AtomicBoolean(false);
+
+    /**
+     * @brief I3: chiave interna (non una preferenza utente) per ricordare l'ultimo fuso
+     * applicato, cosi' da NON rieseguire {@code su}/ribroadcast {@code TIMEZONE_CHANGED}
+     * a ogni foreground ma solo quando il fuso dal server cambia davvero.
+     */
+    private static final String KEY_LAST_TIMEZONE = "_cfg_last_timezone";
 
 
     /**
@@ -199,11 +218,17 @@ public class RaspberryConfigFetcher {
 
                     // timezone + server_time: eseguiti in background per non bloccare il main thread.
                     // Il fuso va impostato PRIMA dell'ora (timezone → server_time).
+                    // I3: fetch() gira a OGNI foreground. Per evitare di riapplicare ora e fuso
+                    // ogni volta (l'orologio poteva "saltare" durante una chiamata):
+                    //  - timezone  → applicato solo se cambiato rispetto all'ultimo applicato
+                    //  - server_time → sincronizzato una sola volta per avvio del processo
                     final String tzValue = root.optString("timezone", "").trim();
-                    final boolean hasTz = root.has("timezone");
+                    final boolean tzChanged = !tzValue.isEmpty()
+                            && !tzValue.equals(prefs.getString(KEY_LAST_TIMEZONE, ""));
                     final boolean hasTime = root.has("server_time");
+                    final boolean applyTime = hasTime && sSystemTimeApplied.compareAndSet(false, true);
                     final long epochSeconds;
-                    if (hasTime) {
+                    if (applyTime) {
                         long parsed = -1;
                         try { parsed = parseServerTime(root); } catch (Exception ignored) {}
                         epochSeconds = parsed;
@@ -212,15 +237,20 @@ public class RaspberryConfigFetcher {
                     }
 
                     new Thread(() -> {
-                        if (hasTz && !tzValue.isEmpty()) {
+                        if (tzChanged) {
                             try {
                                 boolean ok = applyTimezone(tzValue);
                                 Log.d(TAG, "│  timezone       = " + tzValue + (ok ? " OK" : " TIMEOUT"));
+                                // Memorizza il fuso applicato solo se il comando e' andato a buon
+                                // fine, cosi' un timeout verra' ritentato al prossimo foreground.
+                                if (ok) prefs.edit().putString(KEY_LAST_TIMEZONE, tzValue).apply();
                             } catch (Exception e) {
                                 Log.w(TAG, "│  timezone       = ERRORE: " + e.getMessage());
                             }
-                        } else {
+                        } else if (tzValue.isEmpty()) {
                             Log.d(TAG, "│  timezone       = <assente, invariato>");
+                        } else {
+                            Log.d(TAG, "│  timezone       = <invariato dal server, skip>");
                         }
 
                         if (epochSeconds > 0) {
@@ -232,6 +262,8 @@ public class RaspberryConfigFetcher {
                             }
                         } else if (!hasTime) {
                             Log.d(TAG, "│  server_time    = <assente, invariato>");
+                        } else if (!applyTime) {
+                            Log.d(TAG, "│  server_time    = <gia' sincronizzato a questo avvio, skip>");
                         }
 
                         if (brightnessValue >= 0) {
