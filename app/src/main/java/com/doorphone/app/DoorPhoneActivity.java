@@ -60,7 +60,7 @@ import com.doorphone.util.DoorPhoneTrustStore;
 
 
 @SuppressWarnings("deprecation")
-public class DoorPhoneActivity extends Activity implements HumlaServiceProvider, SharedPreferences.OnSharedPreferenceChangeListener {
+public class DoorPhoneActivity extends Activity implements HumlaServiceProvider {
     private static final String TAG = DoorPhoneActivity.class.getSimpleName();
     private IDoorPhoneService mService;
     private Settings mSettings;
@@ -193,19 +193,6 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
 
 
 
-
-
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if(Settings.PREF_THEME.equals(key)) {
-            recreate();
-        } else if (Settings.PREF_STAY_AWAKE.equals(key)) {
-            setStayAwake(mSettings.shouldStayAwake());
-        } else if (Settings.PREF_HANDSET_MODE.equals(key)) {
-            setVolumeControlStream(mSettings.isHandsetMode() ? AudioManager.STREAM_VOICE_CALL : AudioManager.STREAM_MUSIC);
-        }
-
-    }
 
 
 
@@ -646,16 +633,6 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
             }
         }
     }
-
-
-    private void setStayAwake(boolean stayAwake) {
-        if (stayAwake) {
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        } else {
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        }
-    }
-
 
 
     /**

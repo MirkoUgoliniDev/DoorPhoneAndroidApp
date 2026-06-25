@@ -10,6 +10,7 @@ import cz.msebera.android.httpclient.Header;
 import com.doorphone.Settings;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import com.doorphone.callbacks.PostDataCallback;
@@ -77,7 +78,7 @@ public class CommandSubmitter {
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                String json = responseBody != null ? new String(responseBody) : "";
+                String json = responseBody != null ? new String(responseBody, StandardCharsets.UTF_8) : "";
                 Log.d(TAG, "postDataAsync result: " + json);
                 callback.onDataReceived(json);
             }

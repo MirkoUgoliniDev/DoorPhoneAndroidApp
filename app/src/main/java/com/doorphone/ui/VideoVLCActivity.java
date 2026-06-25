@@ -185,11 +185,8 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     /** @brief {@code true} se {@link #onStop()} ha fatto unbind e {@link #onResume()} deve rifarlo. */
     private boolean mNeedsRebind = false;
 
-    /**
-     * @brief Password di accesso al menu impostazioni.
-     * Richiesta dall'utente per accedere a {@link Preferences}.
-     */
-    private String password = "mouse";
+    // La password di accesso al menu impostazioni non e' piu' hardcoded:
+    // viene letta da Settings.getSettingsPassword() (fornita dal config DoorPi).
 
     /** @brief ActionBar dell'activity, usata per mostrare lo stato della connessione Mumble. */
     private ActionBar actionBar;
@@ -448,6 +445,9 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
     protected void onStart() {
         super.onStart();
         Log.d(TAG, "ON START");
+        // Registrato in onStart e deregistrato in onStop: coppia simmetrica.
+        // (Prima era in onResume → un ciclo onPause/onResume senza onStop lo registrava due volte.)
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, new IntentFilter("my-message"));
     }
 
     /**
@@ -484,8 +484,6 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
             mResumingFromPause = false;
         }
         startRtspStream();
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, new IntentFilter("my-message"));
 
         consumeRingExtra(getIntent());
 
@@ -1061,18 +1059,24 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
      * In caso di errore (permessi negati, su non disponibile) viene loggato senza crash.
      */
     private void RebootDevice() {
-        try {
-            Process proc = Runtime.getRuntime().exec(new String[]{"su", "-c", "reboot"});
-            proc.waitFor();
-        } catch (Exception ex) {
-            Log.e(TAG, "Could not Reboot Device: " + ex);
-        }
+        // exec + waitFor su thread di background: niente I/O bloccante sul main thread.
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Process proc = Runtime.getRuntime().exec(new String[]{"su", "-c", "reboot"});
+                    proc.waitFor();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Could not Reboot Device: " + ex);
+                }
+            }
+        }, "reboot-su").start();
     }
 
     /**
      * @brief Mostra un dialog di autenticazione password prima di aprire il menu impostazioni.
      *
-     * Se la password inserita corrisponde a {@link #password}, avvia l'activity specificata.
+     * Se la password inserita corrisponde a quella del config DoorPi ({@link Settings#getSettingsPassword()}), avvia l'activity specificata.
      * Il dialog non è cancellabile per evitare bypass accidentali.
      *
      * @param promptsView    Vista inflata con il campo di testo per la password.
@@ -1089,7 +1093,10 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
                 .setPositiveButton("OK",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
-                                if (userInput.getText().toString().equals(password)) {
+                                String settingsPassword = mSettings != null
+                                        ? mSettings.getSettingsPassword()
+                                        : Settings.DEFAULT_PREF_SETTINGS_PASSWORD;
+                                if (userInput.getText().toString().equals(settingsPassword)) {
                                     StartOptioMenu(activity_to_lunch);
                                 }
                             }

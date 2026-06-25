@@ -9,7 +9,6 @@ import android.media.SoundPool;
 import android.os.AsyncTask;
 import android.util.Log;
 import com.doorphone.R;
-import com.doorphone.ui.VideoVLCActivity;
 
 
 
@@ -58,9 +57,11 @@ public class Sounds {
     }
 
     private Sounds(Context ctx, IOnSoundReady mIOSoundReady) {
-        this.ctx = ctx;
+        // Usa l'application context: il singleton è statico e sopravvive all'Activity,
+        // trattenere il context dell'Activity sarebbe un leak.
+        this.ctx = ctx.getApplicationContext();
         this.callback = mIOSoundReady;
-        this.audioManager = (AudioManager) ctx.getSystemService(VideoVLCActivity.AUDIO_SERVICE);
+        this.audioManager = (AudioManager) this.ctx.getSystemService(Context.AUDIO_SERVICE);
 
         AsyncTask<Void, Void, Void> mTask = new AsyncTask<Void, Void, Void>() {
             @Override
