@@ -245,9 +245,31 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
         public void run() {
             try {
                 Log.d(TAG, "deferred mute: fallback (ACK non ricevuto entro 1500ms)");
-                mService.closeCall();
+                // I4: il timer puo' scattare dopo l'unbind del servizio (binder gia'
+                // azzerato in onServiceDisconnected): guard esplicito invece di
+                // affidarsi al catch dell'NPE.
+                if (mService != null) {
+                    mService.closeCall();
+                }
             } catch (Exception ex) {
                 Log.d(TAG, "deferred mute: " + ex.getMessage());
+            }
+        }
+    };
+
+    /**
+     * @brief M7: auto-chiusura della chiamata 3s dopo l'apertura porta (quando
+     * {@code isAutoCloseOnUnlock}). Runnable NOMINATO — non lambda anonima — cosi'
+     * e' cancellabile via {@code removeCallbacks} al teardown ({@link #onStop()}),
+     * evitando il "timer fantasma" che chiamava {@link #closeCall()} su un'activity
+     * gia' in pausa/distrutta. Il guard {@code isFinishing()/isDestroyed()} protegge
+     * comunque il caso in cui il runnable scatti durante la chiusura.
+     */
+    private final Runnable runnable_auto_close_on_unlock = new Runnable() {
+        @Override
+        public void run() {
+            if (!isFinishing() && !isDestroyed()) {
+                closeCall();
             }
         }
     };
@@ -530,6 +552,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
             Log.d(TAG, "onStop unregisterReceiver: " + ex.getMessage());
         }
         handler_deferred_mute.removeCallbacks(runnable_deferred_mute);
+        handler_ring_timeout.removeCallbacks(runnable_auto_close_on_unlock);  // M7
         disable_recent_app();
         if (isBound) {
             try {
@@ -588,7 +611,9 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
                             mUnlockButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#59981A")));
                             resetUnlockButton(10000);
                             if (mSettings.isAutoCloseOnUnlock()) {
-                                handler_ring_timeout.postDelayed(() -> closeCall(), 3000);
+                                // M7: runnable nominato e cancellabile (vedi onStop), non lambda fantasma
+                                handler_ring_timeout.removeCallbacks(runnable_auto_close_on_unlock);
+                                handler_ring_timeout.postDelayed(runnable_auto_close_on_unlock, 3000);
                             }
                         }
                     } else {
@@ -691,6 +716,10 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
         @Override
         public void onServiceDisconnected(ComponentName name) {
             isBound = false;
+            // I4: azzera il riferimento al binder stantio (coerente con
+            // DoorPhoneActivity). I callback differiti che chiamano mService
+            // (runnable_deferred_mute, ack-close-call) verificano mService != null.
+            mService = null;
         }
 
         @Override
@@ -835,7 +864,10 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
                 handler_deferred_mute.removeCallbacks(runnable_deferred_mute);
                 Log.i(TAG, "ACK close-call ricevuto - mute immediato, timer fallback cancellato");
                 try {
-                    mService.closeCall();
+                    // I4: guard esplicito sul binder (vedi onServiceDisconnected).
+                    if (mService != null) {
+                        mService.closeCall();
+                    }
                 } catch (Exception ex) {
                     Log.d(TAG, "ack-close-call mService.closeCall: " + ex.getMessage());
                 }

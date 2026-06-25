@@ -329,7 +329,7 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
             AlertDialog.Builder adb = new AlertDialog.Builder(DoorPhoneActivity.this);
             adb.setTitle(R.string.perm_denied);
             adb.setMessage(reason);
-            adb.show();
+            if (canShowDialog()) adb.show();  // M6
         }
     };
 
@@ -338,6 +338,19 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
 
 
 
+
+    /**
+     * @brief M6: {@code true} solo se l'Activity puo' mostrare un dialog senza rischiare
+     * {@link android.view.WindowManager.BadTokenException}.
+     *
+     * Diversi dialog qui vengono mostrati da callback ASINCRONI (observer Humla,
+     * {@code onServiceConnected}, completamento del fetch config): se nel frattempo
+     * l'Activity sta terminando o e' gia' distrutta, {@code show()} lancerebbe
+     * BadTokenException. Va chiamato subito prima di ogni {@code show()}.
+     */
+    private boolean canShowDialog() {
+        return !isFinishing() && !isDestroyed();
+    }
 
     /**
      * @brief Mostra una modale obbligatoria centrata per inserire l'IP del server al primo avvio.
@@ -397,7 +410,7 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
             showPianoSelectionDialog();
         });
 
-        dialog.show();
+        if (canShowDialog()) dialog.show();  // M6
     }
 
     /**
@@ -487,7 +500,7 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
             });
         });
 
-        dialog.show();
+        if (canShowDialog()) dialog.show();  // M6
     }
 
     protected void Connect(){
@@ -594,7 +607,7 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
                     }
                 });
                 adb.setNegativeButton(android.R.string.cancel, null);
-                adb.show();
+                if (canShowDialog()) adb.show();  // M6
                 return;
             }
 
@@ -682,7 +695,14 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
                 mConnectingDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                     @Override
                     public void onCancel(DialogInterface dialog) {
-                        mService.disconnect();
+                        // I2: questo callback e' differito (scatta quando l'utente annulla il
+                        // dialog), quindi il guard mService!=null all'ingresso di
+                        // updateConnectionState() non lo protegge: nel frattempo
+                        // onServiceDisconnected() puo' aver azzerato mService -> NPE.
+                        // Stesso pattern di null-guard degli altri listener qui sotto.
+                        if (mService != null) {
+                            mService.disconnect();
+                        }
                         Toast.makeText(DoorPhoneActivity.this, R.string.cancelled, Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -691,7 +711,7 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
                 // SRV lookup is done later, so we no longer show the port (and
                 // only the configured hostname)
                 mConnectingDialog.setMessage(getString(R.string.connecting_to_server, server.getHost()));
-                mConnectingDialog.show();
+                if (canShowDialog()) mConnectingDialog.show();  // M6
                 break;
 
 
@@ -779,7 +799,7 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
                         });
                     }
                     ab.setCancelable(false);
-                    mErrorDialog = ab.show();
+                    if (canShowDialog()) mErrorDialog = ab.show();  // M6
                 }
                 break;
         }
