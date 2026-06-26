@@ -16,6 +16,7 @@ import android.os.Looper;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -149,7 +150,7 @@ public class RaspberryConfigFetcher {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
-                    String json = new String(responseBody);
+                    String json = new String(responseBody, StandardCharsets.UTF_8);
                     Log.d(TAG, "┌─ CONFIG RESPONSE ───────────────────────────");
 
 
@@ -320,6 +321,10 @@ public class RaspberryConfigFetcher {
                             optString(mumbleServer, "password"),
                             optString(mumble, "password"),
                             root.optString("mumble_password", ""));
+                    JSONObject settings = root.optJSONObject("settings");
+                    String settingsPassword = firstNonEmpty(
+                            optString(settings, "password"),
+                            root.optString("settings_password", ""));
 
                     /*
                      * Questi valori sono configurazione operativa del device: non sono piu'
@@ -335,6 +340,7 @@ public class RaspberryConfigFetcher {
                     putIfNotEmpty(runtimeEditor, Settings.PREF_DOORPI_API_PORT, doorpiApiPort);
                     putIfNotEmpty(runtimeEditor, Settings.PREF_DOORPI_PORT, mumblePort);
                     putIfNotEmpty(runtimeEditor, Settings.PREF_DOORPI_PASSWORD, mumblePassword);
+                    putIfNotEmpty(runtimeEditor, Settings.PREF_SETTINGS_PASSWORD, settingsPassword);
                     putIfNotEmpty(runtimeEditor, Settings.PREF_CMD_UNLOCK, unlockCommand);
                     runtimeEditor.apply();
 
@@ -344,6 +350,7 @@ public class RaspberryConfigFetcher {
                     Log.d(TAG, "│  mumble host    = " + (mumbleHost.isEmpty() ? "<cached>" : mumbleHost));
                     Log.d(TAG, "│  mumble port    = " + (mumblePort.isEmpty() ? "<cached>" : mumblePort));
                     Log.d(TAG, "│  mumble password= " + (mumblePassword.isEmpty() ? "<cached/empty>" : "***" + mumblePassword.length() + " chars***"));
+                    Log.d(TAG, "│  settings pass  = " + (settingsPassword.isEmpty() ? "<cached/fallback>" : "***" + settingsPassword.length() + " chars***"));
 
                     JSONObject camera = root.optJSONObject("camera");
                     if (camera == null) {

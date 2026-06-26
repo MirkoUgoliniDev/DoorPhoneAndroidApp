@@ -183,7 +183,21 @@ public class Settings {
 
 
     public static final String PREF_DOORPI_PASSWORD = "door_pi_password";
-    public static final String DEFAULT_PREF_DOORPI_PASSWORD= "gattadapelare";
+    /**
+     * Default vuoto di proposito: la password Mumble NON viaggia nell'APK.
+     * Viene fornita a runtime dal config DoorPi (mumbleserver.password) e
+     * persistita da RaspberryConfigFetcher (putIfNotEmpty). Vedi getDoorPassword/getDoorPiPassword.
+     */
+    public static final String DEFAULT_PREF_DOORPI_PASSWORD = "";
+
+    /** Password che protegge l'accesso al menu impostazioni. */
+    public static final String PREF_SETTINGS_PASSWORD = "settings_password";
+    /**
+     * Fallback temporaneo finche' il config DoorPi non fornisce {@code settings_password}.
+     * Verra' sovrascritto a runtime dal config (RaspberryConfigFetcher, putIfNotEmpty).
+     * TODO: portare a "" una volta che tutti i Raspberry inviano la password nel config.
+     */
+    public static final String DEFAULT_PREF_SETTINGS_PASSWORD = "mouse";
 
 
     public static final String PREF_CAMERA_ENDPOINT = "camera_endpoint";
@@ -481,6 +495,11 @@ public class Settings {
     /** @return Password Mumble ricevuta dal config Raspberry. */
     public String getDoorPiPassword() {
         return preferences.getString(PREF_DOORPI_PASSWORD, DEFAULT_PREF_DOORPI_PASSWORD);
+    }
+
+    /** @return Password del menu impostazioni: dal config DoorPi se presente, altrimenti il fallback. */
+    public String getSettingsPassword() {
+        return preferences.getString(PREF_SETTINGS_PASSWORD, DEFAULT_PREF_SETTINGS_PASSWORD);
     }
 
     /** @return true se la chiamata va chiusa automaticamente dopo lo sblocco porta. */

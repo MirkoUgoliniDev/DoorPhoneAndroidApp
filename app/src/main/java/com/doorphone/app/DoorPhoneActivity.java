@@ -60,7 +60,7 @@ import com.doorphone.util.DoorPhoneTrustStore;
 
 
 @SuppressWarnings("deprecation")
-public class DoorPhoneActivity extends Activity implements HumlaServiceProvider, SharedPreferences.OnSharedPreferenceChangeListener {
+public class DoorPhoneActivity extends Activity implements HumlaServiceProvider {
     private static final String TAG = DoorPhoneActivity.class.getSimpleName();
     private IDoorPhoneService mService;
     private Settings mSettings;
@@ -193,19 +193,6 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
 
 
 
-
-
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if(Settings.PREF_THEME.equals(key)) {
-            recreate();
-        } else if (Settings.PREF_STAY_AWAKE.equals(key)) {
-            setStayAwake(mSettings.shouldStayAwake());
-        } else if (Settings.PREF_HANDSET_MODE.equals(key)) {
-            setVolumeControlStream(mSettings.isHandsetMode() ? AudioManager.STREAM_VOICE_CALL : AudioManager.STREAM_MUSIC);
-        }
-
-    }
 
 
 
@@ -648,16 +635,6 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
     }
 
 
-    private void setStayAwake(boolean stayAwake) {
-        if (stayAwake) {
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        } else {
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        }
-    }
-
-
-
     /**
      * Updates the activity to represent the connection state of the given service.
      * Will show reconnecting dialog if reconnecting, dismiss otherwise, etc.
@@ -716,13 +693,19 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider,
 
 
             case CONNECTED:
-                // TODO: MIRKO
-                Log.d(TAG, "CONNECTED !!!");
-                if (allowOpenVideo) {
-                    openVideoStream();
-                } else {
-                    Log.d(TAG, "CONNECTED — catch-up (allowOpenVideo=false), non riapro VideoVLCActivity");
-                }
+                Log.d(TAG, "CONNECTED — apro/riporto in primo piano VideoVLCActivity (allowOpenVideo=" + allowOpenVideo + ")");
+                // DoorPhoneActivity usa il layout vuoto (R.layout.empty): e' solo un router
+                // che NON deve mai restare visibile a connessione attiva, altrimenti l'utente
+                // vede una schermata bianca. Quindi ogni volta che ci troviamo qui col servizio
+                // gia' CONNECTED (cold start, catch-up dopo riposo/riapertura, uscita dal menu
+                // impostazioni, Back) dobbiamo portare avanti il video.
+                //
+                // Il ping-pong originale (commit 6865864: ON CREATE/ON DESTROY a raffica + RTSP
+                // "Invalid status code -1") era causato dall'assenza dei flag di riordino, non
+                // dalla chiamata in se': openVideoStream() ora usa REORDER_TO_FRONT|SINGLE_TOP,
+                // quindi se VideoVLCActivity e' gia' nello stack viene solo riportata in primo
+                // piano (onNewIntent), senza duplicare l'istanza ne' riavviare lo stream.
+                openVideoStream();
                 mSettings.setMutedAndDeafened(false, false);
                 break;
 
