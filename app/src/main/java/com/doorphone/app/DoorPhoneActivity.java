@@ -693,13 +693,19 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
 
 
             case CONNECTED:
-                // TODO: MIRKO
-                Log.d(TAG, "CONNECTED !!!");
-                if (allowOpenVideo) {
-                    openVideoStream();
-                } else {
-                    Log.d(TAG, "CONNECTED — catch-up (allowOpenVideo=false), non riapro VideoVLCActivity");
-                }
+                Log.d(TAG, "CONNECTED — apro/riporto in primo piano VideoVLCActivity (allowOpenVideo=" + allowOpenVideo + ")");
+                // DoorPhoneActivity usa il layout vuoto (R.layout.empty): e' solo un router
+                // che NON deve mai restare visibile a connessione attiva, altrimenti l'utente
+                // vede una schermata bianca. Quindi ogni volta che ci troviamo qui col servizio
+                // gia' CONNECTED (cold start, catch-up dopo riposo/riapertura, uscita dal menu
+                // impostazioni, Back) dobbiamo portare avanti il video.
+                //
+                // Il ping-pong originale (commit 6865864: ON CREATE/ON DESTROY a raffica + RTSP
+                // "Invalid status code -1") era causato dall'assenza dei flag di riordino, non
+                // dalla chiamata in se': openVideoStream() ora usa REORDER_TO_FRONT|SINGLE_TOP,
+                // quindi se VideoVLCActivity e' gia' nello stack viene solo riportata in primo
+                // piano (onNewIntent), senza duplicare l'istanza ne' riavviare lo stream.
+                openVideoStream();
                 mSettings.setMutedAndDeafened(false, false);
                 break;
 
