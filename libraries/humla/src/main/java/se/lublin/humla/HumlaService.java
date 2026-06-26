@@ -125,7 +125,9 @@ public class HumlaService extends Service implements IHumlaService, IHumlaSessio
     private HumlaCallbacks mCallbacks;
 
     private HumlaConnection mConnection;
-    private ConnectionState mConnectionState;
+    // [DoorPhone] volatile: mConnectionState è letto/scritto dal thread di rete e dal main
+    // thread; senza volatile sono possibili letture "stale" dello stato di connessione.
+    private volatile ConnectionState mConnectionState;
     private ModelHandler mModelHandler;
     private AudioHandler mAudioHandler;
     private BluetoothScoReceiver mBluetoothReceiver;
@@ -135,6 +137,22 @@ public class HumlaService extends Service implements IHumlaService, IHumlaSessio
     private ContinuousInputMode mContinuousInputMode;
 
     private boolean mReconnecting;
+
+    /**
+     * @brief [DoorPhone] Tetto massimo del ritardo di riconnessione, in millisecondi.
+     * Il backoff esponenziale non supera questo valore.
+     */
+    private static final long MAX_RECONNECT_DELAY = 60000;
+
+    /**
+     * @brief [DoorPhone] Numero di tentativi di riconnessione falliti consecutivi.
+     *
+     * Usato in {@link #setReconnecting(boolean)} per il backoff esponenziale del polling
+     * (server raggiungibile in rete ma giù). Azzerato in {@link #onConnectionSynchronized()}
+     * a connessione riuscita. Il ritorno della rete gestito dal {@code NetworkCallback}
+     * di DoorPhoneService riconnette invece subito, senza passare da questo backoff.
+     */
+    private int mReconnectAttempts;
 
     /**
      * Listen for connectivity changes in the reconnection state, and reconnect accordingly.
@@ -289,7 +307,15 @@ public class HumlaService extends Service implements IHumlaService, IHumlaSessio
             mConnection.connect(mServer.getSrvHost(), mServer.getSrvPort());
         } catch (HumlaException e) {
             e.printStackTrace();
+            // [DoorPhone] Se connect() fallisce in modo SINCRONO (es. ConnectException su
+            // server irraggiungibile), in origine ci si limitava a notificare onDisconnected
+            // lasciando lo stato a CONNECTING e mReconnecting a false: la catena di retry si
+            // fermava. Allineiamo il comportamento a onConnectionDisconnected() così che un
+            // errore di connettività continui a ritentare automaticamente.
+            mConnectionState = ConnectionState.CONNECTION_LOST;
             mCallbacks.onDisconnected(e);
+            setReconnecting(mAutoReconnect
+                    && e.getReason() == HumlaException.HumlaDisconnectReason.CONNECTION_ERROR);
         }
     }
 
@@ -349,6 +375,8 @@ public class HumlaService extends Service implements IHumlaService, IHumlaSessio
         }
 
         mConnectionState = ConnectionState.CONNECTED;
+        // [DoorPhone] Connessione riuscita: azzera il backoff di riconnessione.
+        mReconnectAttempts = 0;
 
         Log.v(Constants.TAG, "Connected");
         mWakeLock.acquire();
@@ -439,14 +467,23 @@ public class HumlaService extends Service implements IHumlaService, IHumlaSessio
             ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
             NetworkInfo info = cm.getActiveNetworkInfo();
             if (info != null && info.isConnected()) {
-                Log.v(Constants.TAG, "Connection lost due to non-connectivity issue. Start reconnect polling.");
-                Handler mainHandler = new Handler(getMainLooper());
-                mainHandler.postDelayed(new Runnable() {
+                // [DoorPhone] Backoff esponenziale con tetto + jitter, invece del ritardo
+                // fisso originale. Evita di martellare un server giù (e il "thundering herd"
+                // di più kiosk che ripartono insieme). Sequenza con base 10s: 10s, 20s, 40s,
+                // poi cap a 60s. Il jitter (±15%) desincronizza i client.
+                long base = mAutoReconnectDelay * (1L << Math.min(mReconnectAttempts, 3));
+                if (base > MAX_RECONNECT_DELAY) base = MAX_RECONNECT_DELAY;
+                long jitter = (long) (base * 0.15 * (Math.random() * 2 - 1));
+                final long delay = base + jitter;
+                mReconnectAttempts++;
+                Log.v(Constants.TAG, "Connection lost due to non-connectivity issue. " +
+                        "Reconnect polling in " + delay + "ms (attempt " + mReconnectAttempts + ").");
+                mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         if (mReconnecting) connect();
                     }
-                }, mAutoReconnectDelay);
+                }, delay);
             } else {
                 // In the event that we've lost connectivity, don't poll. Wait until network
                 // returns before we resume connection attempts.

@@ -42,6 +42,23 @@ import se.lublin.humla.util.HumlaException;
  * Parses Mumble protobuf packets according to the Mumble protocol specification.
  */
 public class HumlaTCP extends HumlaNetworkThread {
+
+    /**
+     * @brief [DoorPhone] Timeout di lettura del socket TCP, in millisecondi.
+     *
+     * Senza questo timeout {@code readShort()} resta bloccato all'infinito se la rete
+     * cade in modo "silenzioso" (half-open, senza FIN/RST): la caduta verrebbe rilevata
+     * solo dal keepalive TCP del sistema operativo (default ~2 ore). Con il timeout la
+     * lettura sblocca con una {@link java.net.SocketTimeoutException} (sottoclasse di
+     * {@link IOException}) che viene gestita come errore di connessione e innesca
+     * l'auto-reconnect.
+     *
+     * Su una connessione sana c'è traffico almeno ogni 5s (ping), quindi 40s è un valore
+     * ampiamente sicuro che non causa falsi positivi. Funge da rete di sicurezza al
+     * watchdog applicativo di {@code HumlaConnection} (timeout ping a 30s).
+     */
+    private static final int SOCKET_READ_TIMEOUT_MS = 40000;
+
     private final HumlaSSLSocketFactory mSocketFactory;
     private String mHost;
     private int mPort;
@@ -89,6 +106,9 @@ public class HumlaTCP extends HumlaNetworkThread {
             }
 
             mTCPSocket.setKeepAlive(true);
+            // [DoorPhone] Timeout di lettura: sblocca il read loop se la connessione muore
+            // silenziosamente, senza dipendere dal keepalive TCP del SO (~2 ore di default).
+            mTCPSocket.setSoTimeout(SOCKET_READ_TIMEOUT_MS);
             mTCPSocket.startHandshake();
 
             Log.v(Constants.TAG, "HumlaTCP: Started handshake");
@@ -178,8 +198,12 @@ public class HumlaTCP extends HumlaNetworkThread {
                     mDataOutput.writeInt(message.getSerializedSize());
                     message.writeTo(mDataOutput);
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    // TODO handle
+                    // [DoorPhone] Una scrittura TCP fallita significa socket morto (TCP è
+                    // affidabile): propaghiamo l'errore così da innescare l'auto-reconnect
+                    // invece di ignorarlo silenziosamente. error() ignora il caso di
+                    // disconnessione volontaria (mRunning == false) e l'eventuale doppio
+                    // inoltro è assorbito dal guard mExceptionHandled di HumlaConnection.
+                    error("Errore di scrittura sul socket TCP", e);
                 }
             }
         });
@@ -201,7 +225,9 @@ public class HumlaTCP extends HumlaNetworkThread {
                     mDataOutput.writeInt(length);
                     mDataOutput.write(message, 0, length);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    // [DoorPhone] Vedi sendMessage(Message, ...): scrittura fallita = socket
+                    // morto, propaghiamo per innescare l'auto-reconnect.
+                    error("Errore di scrittura sul socket TCP", e);
                 }
             }
         });
