@@ -284,6 +284,30 @@ public class HumlaService extends Service implements IHumlaService, IHumlaSessio
     }
 
     protected void connect() {
+        // [DoorPhone] GUARD anti doppia-connessione — choke-point unico.
+        //
+        // connect() è invocato da più percorsi concorrenti ma tutti sul main thread:
+        //   1. onStartCommand con ACTION_CONNECT (ServerConnectTask dall'Activity)
+        //   2. DoorPhoneService.NetworkCallback.onAvailable (ritorno rete)
+        //   3. backoff di auto-reconnect (postDelayed su mHandler)
+        //   4. mConnectivityReceiver legacy (ritorno rete pre-Doze)
+        //   5. retry su accettazione certificato / permesso audio (Activity)
+        //
+        // Senza guard ogni invocazione riassegnava mConnection a una NUOVA HumlaConnection
+        // SENZA chiudere la precedente: la vecchia socket TCP restava viva e autenticata,
+        // dando due (o più) sessioni con lo stesso certificato → il server scalcia i
+        // duplicati ("connected from another device") → tempesta di disconnessioni.
+        //
+        // Essendo connect() sempre sul main thread (single-thread), il check di stato è
+        // sufficiente e affidabile: se una connessione è già in corso (CONNECTING) o attiva
+        // (CONNECTED) ignoriamo la richiesta — quella in volo è quella buona. Si procede solo
+        // da DISCONNECTED/CONNECTION_LOST, stati in cui la mConnection precedente è già morta.
+        if (mConnectionState == ConnectionState.CONNECTING
+                || mConnectionState == ConnectionState.CONNECTED) {
+            Log.w(Constants.TAG, "connect() ignorato: connessione già in stato " + mConnectionState);
+            return;
+        }
+
         try {
             setReconnecting(false);
             mConnectionState = ConnectionState.DISCONNECTED;
