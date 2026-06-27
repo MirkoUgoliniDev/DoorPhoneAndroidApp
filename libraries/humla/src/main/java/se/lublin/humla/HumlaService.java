@@ -145,6 +145,19 @@ public class HumlaService extends Service implements IHumlaService, IHumlaSessio
     private static final long MAX_RECONNECT_DELAY = 60000;
 
     /**
+     * @brief [DoorPhone] Rampa iniziale rapida di riconnessione, in millisecondi.
+     *
+     * Applicata ai primi tentativi (uno per elemento) PRIMA del backoff esponenziale.
+     * Copre il transitorio di early-boot in cui la rete WiFi e' associata ma non ancora
+     * L3-ready (route/DHCP) e il primo TCP fallisce in pochi ms/secondi: in quei casi
+     * il {@code NetworkCallback} di DoorPhoneService non sempre fa da rescue (se il WiFi
+     * risultava gia' "available" alla registrazione), e senza questa rampa il recupero
+     * ricadeva sul backoff lungo (10s+20s -> worst-case ~42s al boot). Vedi
+     * {@code docs/fix-reconnect-backoff-2026-06-27.md}.
+     */
+    private static final long[] FAST_RECONNECT_DELAYS = {1000, 2000, 4000};
+
+    /**
      * @brief [DoorPhone] Numero di tentativi di riconnessione falliti consecutivi.
      *
      * Usato in {@link #setReconnecting(boolean)} per il backoff esponenziale del polling
@@ -491,12 +504,21 @@ public class HumlaService extends Service implements IHumlaService, IHumlaSessio
             ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
             NetworkInfo info = cm.getActiveNetworkInfo();
             if (info != null && info.isConnected()) {
-                // [DoorPhone] Backoff esponenziale con tetto + jitter, invece del ritardo
-                // fisso originale. Evita di martellare un server giù (e il "thundering herd"
-                // di più kiosk che ripartono insieme). Sequenza con base 10s: 10s, 20s, 40s,
-                // poi cap a 60s. Il jitter (±15%) desincronizza i client.
-                long base = mAutoReconnectDelay * (1L << Math.min(mReconnectAttempts, 3));
-                if (base > MAX_RECONNECT_DELAY) base = MAX_RECONNECT_DELAY;
+                // [DoorPhone] Rampa rapida iniziale + backoff esponenziale con tetto + jitter.
+                // I primi FAST_RECONNECT_DELAYS.length tentativi usano ritardi brevi (1s/2s/4s):
+                // servono al transitorio di early-boot (rete non ancora L3-ready) per recuperare
+                // in pochi secondi invece dei ~42s del solo backoff lungo. Dopo questi si passa al
+                // backoff esponenziale (base 10s: 10s, 20s, 40s, poi cap 60s), dimensionato per il
+                // server giù in steady-state: evita di martellarlo e il "thundering herd" di più
+                // kiosk che ripartono insieme. Il jitter (±15%) desincronizza i client.
+                long base;
+                if (mReconnectAttempts < FAST_RECONNECT_DELAYS.length) {
+                    base = FAST_RECONNECT_DELAYS[mReconnectAttempts];
+                } else {
+                    int exp = mReconnectAttempts - FAST_RECONNECT_DELAYS.length;
+                    base = mAutoReconnectDelay * (1L << Math.min(exp, 3));
+                    if (base > MAX_RECONNECT_DELAY) base = MAX_RECONNECT_DELAY;
+                }
                 long jitter = (long) (base * 0.15 * (Math.random() * 2 - 1));
                 final long delay = base + jitter;
                 mReconnectAttempts++;
