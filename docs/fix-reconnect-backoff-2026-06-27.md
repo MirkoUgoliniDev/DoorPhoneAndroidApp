@@ -77,7 +77,22 @@ Nota di onestà sulla copertura: in questa corsa **nessun ciclo è entrato nel p
 
 Worst-case early-boot atteso col fix: da **~42 s a ~12–15 s** (1+2+4 s di rampa + tentativi, invece di 10+22 s).
 
-> Per una verifica *live* della rampa serve forzare un `CONNECTION_LOST` con rete su (es. blocco temporaneo della porta 64738 via `iptables` su device rootato, o stop momentaneo del server Mumble): si osservano allora le righe `Reconnect polling in 1000ms/2000ms/4000ms (attempt N)`.
+### Verifica live (server Mumble fermato a mano)
+
+Forzato un `CONNECTION_LOST` con la rete del tablet su, fermando il server (`systemctl stop mumble-server` per ~80 s, poi `start`). Ritardi reali catturati dal log (`Reconnect polling in <delay>ms (attempt N)`):
+
+| Attempt | Ritardo loggato | Atteso |
+|--:|--:|--:|
+| 1 | 1145 ms | ~1 s (rampa) |
+| 2 | 1918 ms | ~2 s (rampa) |
+| 3 | 3984 ms | ~4 s (rampa) |
+| 4 | 10723 ms | ~10 s (esponenziale) |
+| 5 | 22443 ms | ~20 s (esponenziale) |
+| 6 | 36892 ms | ~40 s (esponenziale) |
+
+→ al riavvio del servizio: **riconnesso, pallino VERDE**. Sequenza esatta `1→2→4→10→20→40 s` (+jitter ±15%) confermata **live**.
+
+Secondo test (reboot completo del Raspberry): primo retry a **1080 ms (attempt 1)** invece di 10 s; il singolo connect è rimasto pendente finché l'host non è tornato, poi aggancio immediato. In entrambi i test il **pallino** ha seguito lo stato reale (ROSSO durante l'outage, VERDE al recupero).
 
 ## 6. Come rieseguire il test
 
