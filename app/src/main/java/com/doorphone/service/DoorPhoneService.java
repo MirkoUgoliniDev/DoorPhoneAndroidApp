@@ -14,6 +14,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
+import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
@@ -140,6 +141,20 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
      * 4. Se non connessi: cancella il vecchio receiver bloccato e forza la riconnessione.
      */
     private ConnectivityManager.NetworkCallback mNetworkCallback;
+
+    /**
+     * @brief [DoorPhone] WifiLock che mantiene la radio Wi-Fi a piene prestazioni.
+     *
+     * Acquisito in {@link #onCreate()} e rilasciato in {@link #onDestroy()}. Impedisce
+     * che il chip Wi-Fi entri in power-save quando non c'è traffico: riduce la latenza
+     * di ricezione (lo squillo arriva prima) e rende più reattiva la riconnessione dopo
+     * un buco di rete.
+     *
+     * @note Usa {@link WifiManager#WIFI_MODE_FULL_HIGH_PERF}, deprecato da API 29 ma ancora
+     *       funzionante; la deprecazione è già soppressa a livello di classe. Il maggior
+     *       consumo energetico è irrilevante per un kiosk alimentato a rete elettrica.
+     */
+    private WifiManager.WifiLock mWifiLock;
 
     /**
      * @brief Flag per ignorare il primo {@code onAvailable()} post-registrazione.
@@ -444,6 +459,63 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         }
 
         registerNetworkCallback();
+        acquireWifiLock();
+    }
+
+    /**
+     * @brief [DoorPhone] Acquisisce il {@link #mWifiLock} ad alte prestazioni.
+     *
+     * Idempotente e difensivo: non fa nulla se il {@code WifiManager} non è disponibile
+     * o se il lock è già attivo.
+     */
+    private void acquireWifiLock() {
+        WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if (wm == null) return;
+        if (mWifiLock == null) {
+            mWifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "DoorPhone:wifi");
+        }
+        if (!mWifiLock.isHeld()) {
+            mWifiLock.acquire();
+            Log.d(TAG, "WifiLock acquisito");
+        }
+    }
+
+    /**
+     * @brief [DoorPhone] Rilascia il {@link #mWifiLock} se attivo. Chiamato in {@link #onDestroy()}.
+     */
+    private void releaseWifiLock() {
+        if (mWifiLock != null && mWifiLock.isHeld()) {
+            mWifiLock.release();
+            Log.d(TAG, "WifiLock rilasciato");
+        }
+    }
+
+    /**
+     * @brief Gestisce gli avvii/riavvii del servizio e ne richiede la persistenza.
+     *
+     * Delega a {@link HumlaService#onStartCommand(Intent, int, int)} la gestione
+     * dell'intent (configurazione extra + eventuale {@code ACTION_CONNECT}), ma forza
+     * il valore di ritorno a {@link #START_STICKY} al posto dello {@code START_NOT_STICKY}
+     * della libreria.
+     *
+     * Motivazione (kiosk 24/7): con {@code START_NOT_STICKY} il sistema, se termina il
+     * servizio per pressione di memoria o policy OEM, NON lo riavvia. Con {@code START_STICKY}
+     * il processo viene ricreato automaticamente.
+     *
+     * @note Al riavvio "sticky" l'intent è {@code null}: la libreria lo gestisce senza
+     *       lanciare e il servizio torna foreground via {@link #onCreate()}. La connessione
+     *       Mumble vera riparte quando {@link com.doorphone.app.DoorPhoneActivity} (launcher
+     *       del kiosk) si ri-lega e richiama {@code Connect()}.
+     *
+     * @param intent  Intent di avvio (può essere {@code null} su riavvio sticky).
+     * @param flags   Flag di avvio forniti dal sistema.
+     * @param startId Identificatore univoco di questa richiesta di avvio.
+     * @return {@link #START_STICKY}.
+     */
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 
     /**
@@ -463,6 +535,7 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
      * - Tenta di deregistrare il TalkReceiver (ignorando se già deregistrato).
      * - Deregistra l'observer Humla e spegne il TTS.
      * - Deregistra il NetworkCallback.
+     * - Rilascia il WifiLock.
      */
     @Override
     public void onDestroy() {
@@ -475,6 +548,7 @@ public class DoorPhoneService extends HumlaService implements SharedPreferences.
         if(mTTS != null) mTTS.shutdown();
 
         unregisterNetworkCallback();
+        releaseWifiLock();
 
         super.onDestroy();
     }

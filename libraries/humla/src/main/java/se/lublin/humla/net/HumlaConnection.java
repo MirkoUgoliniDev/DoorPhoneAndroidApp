@@ -103,9 +103,39 @@ public class HumlaConnection implements HumlaTCP.TCPConnectionListener, HumlaUDP
     private long mStartTimestamp; // Time that the connection was initiated in nanoseconds
     private final CryptState mCryptState = new CryptState();
 
+    /**
+     * @brief [DoorPhone] Timeout del watchdog di ping TCP, in microsecondi.
+     *
+     * Se non si riceve alcuna risposta Ping dal server entro questo intervallo la
+     * connessione è considerata "morta" (half-open: il socket non riceve più dati ma
+     * non genera errori — es. AP riavviato o NAT scaduto senza RST). In tal caso si
+     * forza una disconnessione con
+     * {@link HumlaException.HumlaDisconnectReason#CONNECTION_ERROR}, che innesca
+     * l'auto-reconnect lato {@code HumlaService}.
+     *
+     * I ping partono ogni 5s ({@link #mPingRunnable}); 30s ≈ 6 ping persi consecutivi.
+     */
+    private static final long TCP_PING_TIMEOUT_MICROS = 30L * 1000 * 1000;
+
     // Latency
     private long mLastUDPPing;
     private long mLastTCPPing;
+
+    /**
+     * @brief [DoorPhone] Timestamp (in microsecondi, vedi {@link #getElapsed()}) dell'ultima
+     * risposta Ping TCP ricevuta dal server.
+     *
+     * Usato dal watchdog in {@link #mPingRunnable} per rilevare una connessione morta.
+     * Da non confondere con {@link #mLastTCPPing}, che memorizza la latenza (round-trip)
+     * e non il momento dell'ultima ricezione.
+     *
+     * 0 = nessuna baseline impostata / nessuna ping ancora ricevuta (watchdog inattivo).
+     *
+     * @note volatile: scritto sul main thread (baseline alla sync e a ogni Ping ricevuta),
+     *       letto sul thread del ping executor dal watchdog. Senza volatile il thread di ping
+     *       potrebbe leggere il valore stale 0 e non far MAI scattare il watchdog.
+     */
+    private volatile long mLastReceivedTCPPing;
 
     // Server
     private String mHost;
@@ -135,6 +165,11 @@ public class HumlaConnection implements HumlaTCP.TCPConnectionListener, HumlaUDP
             if (shouldForceTCP()) {
                 enableForceTCP();
             }
+
+            // [DoorPhone] Baseline del watchdog di ping: il timeout viene misurato a partire
+            // dalla sincronizzazione, così rileviamo anche il caso in cui il server non
+            // risponda MAI ai ping (e non solo quello in cui smette di rispondere più tardi).
+            mLastReceivedTCPPing = getElapsed();
 
             // Start TCP/UDP ping thread. FIXME is this the right place?
             try {
@@ -227,6 +262,8 @@ public class HumlaConnection implements HumlaTCP.TCPConnectionListener, HumlaUDP
             // In microseconds
             long elapsed = getElapsed();
             mLastTCPPing = elapsed-msg.getTimestamp();
+            // [DoorPhone] Risposta ping ricevuta: aggiorna il watchdog di connessione morta.
+            mLastReceivedTCPPing = elapsed;
 
             if(((mCryptState.mUiRemoteGood == 0) || (mCryptState.mUiGood == 0)) && mUsingUDP && elapsed > 20000000) {
                 mUsingUDP = false;
@@ -267,27 +304,54 @@ public class HumlaConnection implements HumlaTCP.TCPConnectionListener, HumlaUDP
     private Runnable mPingRunnable = new Runnable() {
         @Override
         public void run() {
+            // [DoorPhone] try/catch(Throwable) obbligatorio: scheduleAtFixedRate cancella
+            // SILENZIOSAMENTE tutte le esecuzioni future se il task lancia un'eccezione non
+            // gestita. Senza questa rete, un singolo errore qui spegnerebbe per sempre i ping
+            // E il watchdog (che vive dentro questo runnable), lasciando la connessione cieca.
+            try {
+                // In microseconds
+                long t = getElapsed();
 
-            // In microseconds
-            long t = getElapsed();
+                // [DoorPhone] Watchdog connessione morta (half-open): se il server non risponde
+                // ai ping da troppo tempo, il socket è di fatto inutile anche se non ha generato
+                // alcun errore I/O. Forziamo una disconnessione "fatale" così che HumlaService
+                // avvii l'auto-reconnect. handleFatalException() deve girare sul main thread (come
+                // tutti gli altri callback di connessione), quindi la posticipiamo su mMainHandler.
+                if (mLastReceivedTCPPing != 0 && (t - mLastReceivedTCPPing) > TCP_PING_TIMEOUT_MICROS) {
+                    Log.w(Constants.TAG, "Ping watchdog: nessuna risposta dal server da "
+                            + ((t - mLastReceivedTCPPing) / 1_000_000) + "s, forzo la disconnessione");
+                    mMainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            handleFatalException(new HumlaException(
+                                    "Ping timeout: nessuna risposta dal server",
+                                    HumlaException.HumlaDisconnectReason.CONNECTION_ERROR));
+                        }
+                    });
+                    return; // non inviare ulteriori ping su una connessione ormai morta
+                }
 
-            if (!shouldForceTCP()) {
-                ByteBuffer buffer = ByteBuffer.allocate(16);
-                buffer.put((byte) ((HumlaUDPMessageType.UDPPing.ordinal() << 5) & 0xFF));
-                buffer.putLong(t);
+                if (!shouldForceTCP()) {
+                    ByteBuffer buffer = ByteBuffer.allocate(16);
+                    buffer.put((byte) ((HumlaUDPMessageType.UDPPing.ordinal() << 5) & 0xFF));
+                    buffer.putLong(t);
 
-                sendUDPMessage(buffer.array(), 16, true);
-//                Log.v(Constants.TAG, "OUT: UDP Ping");
+                    sendUDPMessage(buffer.array(), 16, true);
+//                    Log.v(Constants.TAG, "OUT: UDP Ping");
+                }
+
+                Mumble.Ping.Builder pb = Mumble.Ping.newBuilder();
+                pb.setTimestamp(t);
+                pb.setGood(mCryptState.mUiGood);
+                pb.setLate(mCryptState.mUiLate);
+                pb.setLost(mCryptState.mUiLost);
+                pb.setResync(mCryptState.mUiResync);
+                // TODO accumulate stats and send with ping
+                sendTCPMessage(pb.build(), HumlaTCPMessageType.Ping);
+            } catch (Throwable e) {
+                // Non propagare: logghiamo e lasciamo proseguire i cicli successivi.
+                Log.e(Constants.TAG, "Errore nel ping runnable (ignorato per non fermare lo scheduler)", e);
             }
-
-            Mumble.Ping.Builder pb = Mumble.Ping.newBuilder();
-            pb.setTimestamp(t);
-            pb.setGood(mCryptState.mUiGood);
-            pb.setLate(mCryptState.mUiLate);
-            pb.setLost(mCryptState.mUiLost);
-            pb.setResync(mCryptState.mUiResync);
-            // TODO accumulate stats and send with ping
-            sendTCPMessage(pb.build(), HumlaTCPMessageType.Ping);
         }
     };
 
@@ -484,7 +548,9 @@ public class HumlaConnection implements HumlaTCP.TCPConnectionListener, HumlaUDP
         if(mPingTask != null) mPingTask.cancel(true);
         if(mTCP != null) mTCP.disconnect();
         if(mUDP != null) mUDP.disconnect();
-        mPingExecutorService.shutdown();
+        // [DoorPhone] null-guard: disconnect() può essere chiamato prima di connect()
+        // (es. dal guard difensivo in HumlaService.connect()), quando l'executor non esiste.
+        if(mPingExecutorService != null) mPingExecutorService.shutdown();
 
         mTCP = null;
         mUDP = null;
