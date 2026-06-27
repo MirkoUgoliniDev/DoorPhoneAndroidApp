@@ -1,6 +1,8 @@
-# MumlaO — Client Mumble con controllo DoorPi
+# DoorPhone — Client Mumble con controllo DoorPi
 
-**MumlaO** è un'applicazione Android che combina un client **Mumble** (VoIP) con il controllo di un videocitofono intelligente basato su **DoorPi** (Raspberry Pi).
+**DoorPhone** (package `com.doorphone`) è un'applicazione Android che combina un client **Mumble** (VoIP) con il controllo di un videocitofono intelligente basato su **DoorPi** (Raspberry Pi).
+
+> **Nota sul nome:** il progetto nasceva come **MumlaO** (fork di Mumla). È stato rinominato in **DoorPhone** con la migrazione del package da `se.lublin.mumla` a `com.doorphone`. In questo documento "DoorPhone" e il vecchio "MumlaO" indicano la stessa app; eventuali riferimenti residui a `mumlaO/` riguardano la vecchia cartella ormai dismessa.
 
 È un fork personalizzato di [Mumla](https://gitlab.com/quite/mumla) (GPL v3), esteso con:
 - Streaming video **RTSP / H.264** dalla telecamera DoorPi (libreria alexvas/rtsp-client-android)
@@ -17,7 +19,7 @@
 1. [Requisiti](#1-requisiti)
 2. [Architettura del sistema](#2-architettura-del-sistema)
 3. [Configurazione remota — RaspberryConfigFetcher](#3-configurazione-remota--raspberryconfigfetcher)
-4. [Foreground Service — DoorPhoneService](#4-foreground-service--mumlaservice)
+4. [Foreground Service — DoorPhoneService](#4-foreground-service--doorphoneservice)
 5. [Riconnessione WiFi e Doze mode](#5-riconnessione-wifi-e-doze-mode)
 6. [Streaming video RTSP](#6-streaming-video-rtsp)
 7. [Server DoorPi — HTTP REST](#7-server-doorpi--http-rest)
@@ -299,9 +301,9 @@ DoorPhoneActivity.onCreate()
 
 | Stato | Titolo | Testo |
 |-------|--------|-------|
-| `onCreate()` | MumlaO | Connessione in corso... |
-| `onConnected()` | MumlaO — Connesso a DoorPi | Servizio Mumble attivo |
-| `onDisconnected()` | MumlaO | In riconnessione... |
+| `onCreate()` | DoorPhone | Connessione in corso... |
+| `onConnected()` | DoorPhone — Connesso a DoorPi | Servizio Mumble attivo |
+| `onDisconnected()` | DoorPhone | In riconnessione... |
 
 ### Flag `mDoorCallActive`
 
@@ -361,6 +363,18 @@ WiFi torna
 | No doppio connect | Guard su stato: se già `CONNECTING`, il secondo `onAvailable()` viene ignorato |
 | No NPE al boot | Guard `getTargetServer() == null`: protegge dalla finestra tra `onCreate()` e la prima `Connect()` |
 | No falso trigger al boot | `mFirstNetworkCallback` skippa il primo `onAvailable()` sintetico se WiFi era già disponibile |
+
+### Connessione al boot — keyguard + schermo spento (fix 2026-06-27)
+
+La connessione Mumble è avviata **solo** da `DoorPhoneActivity.onServiceConnected() → Connect()`, che richiede l'Activity **RESUMED**. Dopo un reboot (il kiosk riavvia ~2×/giorno) il device si presenta su **keyguard con schermo spento**: `DoorPhoneActivity`, pur essendo il launcher, va in `onResume → onPause` in ~55 ms dietro il keyguard e non resta mai in foreground → il `DoorPhoneService` nasce ma non riceve mai l'ordine di connettersi (e il `NetworkCallback` non può supplire perché `getTargetServer()` è ancora `null`). Risultato: **app scollegata finché un umano non sblocca lo schermo**.
+
+**Fix:** in `DoorPhoneActivity.onCreate()` vengono aggiunti i window flags
+`FLAG_SHOW_WHEN_LOCKED | FLAG_DISMISS_KEYGUARD | FLAG_TURN_SCREEN_ON | FLAG_KEEP_SCREEN_ON`
+(gli stessi già usati da `VideoVLCActivity`). Il router emerge sopra il lockscreen e accende lo schermo per la finestra di boot/connect → resta RESUMED → la connessione parte da sola.
+
+Verificato con reboot ripetuti (`docs/reboot_test.sh`): **baseline senza fix 3/3 blocco; con fix 10/10 connesso in 6-8 s**, senza interazione. Dettaglio completo in **`docs/fix-blocco-boot-2026-06-27.md`**.
+
+> **Assunzione:** `DISMISS_KEYGUARD` sblocca solo un keyguard **non sicuro** (senza PIN/pattern), come sul kiosk. Con un PIN configurato il boot-connect tornerebbe a bloccarsi.
 
 ---
 
@@ -796,9 +810,12 @@ sudo journalctl -u mumble-server -f
 
 ### Build debug (dispositivo fisico)
 ```powershell
-.\gradlew assembleBetaDebug
+.\gradlew assembleDebug
 ```
 APK: `app/build/outputs/apk/debug/doorphone.apk`
+
+> Non ci sono product flavor: un'unica variante `debug`, splittata per ABI tramite
+> `output.outputFileName` in `app/build.gradle`.
 
 ### Installazione su Nexus 7 (USB)
 ```powershell
@@ -806,10 +823,11 @@ adb install -r app\build\outputs\apk\debug\doorphone.apk
 adb shell am start -n "com.doorphone/com.doorphone.app.DoorPhoneActivity"
 ```
 
-### Flavor
-| Flavor | Package | Stato |
-|--------|---------|-------|
-| `beta` | `com.doorphone` | Unico flavor attivo |
+### Output per ABI (nessun flavor)
+| ABI | APK | Target |
+|-----|-----|--------|
+| `armeabi-v7a` | `doorphone.apk` | Nexus 7 2012 (Tegra 3), device reale |
+| `x86_64` | `doorphone_emulatore.apk` | Emulatore Android Studio (API 29) |
 
 ---
 
@@ -846,9 +864,9 @@ Soluzione: avviare il proxy e usare `tools\camera_emulator.bat`.
 ## 16. Struttura del progetto
 
 ```
-mumlaO/
+DoorPhoneAndroidApp/
 ├── app/
-│   ├── build.gradle                     Dipendenze, SDK, flavor
+│   ├── build.gradle                     Dipendenze, SDK, split ABI
 │   ├── docs/
 │   │   ├── call_protocol_android.md     Protocollo chiamata dettagliato
 │   │   └── bugfix_todo.md               Lista bug e fix applicati
@@ -922,13 +940,19 @@ mumlaO/
 | 16 | NPE se `onAvailable()` scatta prima di `Connect()` | Guard `getTargetServer() == null` | `DoorPhoneService` |
 | 17 | `server_time` come stringa causa errore di 2 ore | Parsato come epoch int; fix lato server (vedi sezione 13) | `RaspberryConfigFetcher` |
 | 18 | Pallino stato resta rosso per secondi anche dopo riconnessione | `UpdateClientStatus("Connected")` spostato in `onConnected()` (TCP up) invece di aspettare `onUserConnected()` (sync utenti). Verde immediato su WiFi-return e Mumble-server-return | `DoorPhoneService` |
+| 19 | Robustezza riconnessione kiosk 24/7 | Watchdog ping TCP (timeout 30s) per connessioni half-open, `setSoTimeout(40s)` sul read loop + propagazione errori di scrittura, backoff esponenziale+jitter (10/20/40s, cap 60s), `START_STICKY`, WifiLock `FULL_HIGH_PERF` | `HumlaConnection`, `HumlaTCP`, `HumlaService`, `DoorPhoneService` — commit `c046d14` |
+| 20 | Doppia connessione Mumble → "Kicked from another device" (fix client-side definitivo) | `connect()` non aveva guard e non chiudeva la `mConnection` precedente → socket TCP orfane con lo stesso certificato → il server scalciava i duplicati → disconnessione "fantasma" ogni ~39s (soTimeout). Fix: guard in `connect()` (ignora se CONNECTING/CONNECTED), chiusura connessione precedente, watchdog reso affidabile (`mLastReceivedTCPPing` volatile, try/catch nel ping runnable) | `HumlaService`, `HumlaConnection` — commit `5fab811` |
+| 21 | Schermata bianca al ritorno su `DoorPhoneActivity` (catch-up) | Il router con layout vuoto restava visibile quando il servizio era già CONNECTED al ri-foreground; il ramo CONNECTED ora riporta sempre avanti `VideoVLCActivity` (`REORDER_TO_FRONT|SINGLE_TOP`) | `DoorPhoneActivity` — commit `4d7fa74` |
+| 22 | Security hardening + best-practice cleanup (da review agenti) | Vari interventi di sicurezza e robustezza del ciclo di vita | commit `dce2bb7` |
+| 23 | Blocco al boot: Mumble non si connette dopo reboot | Su keyguard a schermo spento il router non resta RESUMED → connect mai avviato. Fix: window flags `SHOW_WHEN_LOCKED \| DISMISS_KEYGUARD \| TURN_SCREEN_ON \| KEEP_SCREEN_ON` su `onCreate`. Incluso anche l'anti-blocco della modale "Connessione a …" (`dismissConnectingDialog()` + dismiss nel ramo CONNECTED). Verificato 10/10 reboot. Vedi `docs/fix-blocco-boot-2026-06-27.md` | `DoorPhoneActivity` — commit `1a5f978` |
 
 ### Bug noti non ancora risolti
 
 | # | Problema | Impatto | Note |
 |---|---------|---------|------|
 | A | Warning rotazione codec Nexus 7 | Basso — video si vede correttamente | `OMX.Nvidia.h264.decode` non supporta `KEY_ROTATION` via MediaFormat; SurfaceFlinger applica comunque la rotazione |
-| B | Mumble "Kicked from another device" al riavvio rapido | Medio — introduce delay alla connessione | Fix lato server: `timeout=15` in murmur.ini. Fix lato client richiederebbe modifica alla libreria Humla |
+
+> Il vecchio bug **B "Kicked from another device"** è stato **risolto lato client** (fix #20, commit `5fab811`) oltre al palliativo lato server (`timeout=15` in murmur.ini, vedi §13).
 
 ---
 

@@ -72,13 +72,19 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
 
 
     /**
-     * @brief Inizializza l'Activity: tema, layout, database e stream audio.
+     * @brief Inizializza l'Activity: tema, layout, stream audio e window flags kiosk.
      *
      * Non avvia la connessione Mumble: lo fa {@link #mConnection} in
      * {@code onServiceConnected()}, dopo aver verificato che il servizio
      * non sia già connesso. Questo evita il "Kicked: connected from another
      * device" quando l'Activity viene ricreata mentre {@link DoorPhoneService}
      * è ancora attivo in background.
+     *
+     * @note Aggiunge i window flags (show-when-locked / dismiss-keyguard /
+     *       turn-screen-on / keep-screen-on) necessari a far emergere il router
+     *       sopra il lockscreen al boot: senza, su keyguard a schermo spento
+     *       l'Activity non resta RESUMED e la connessione non parte mai
+     *       (vedi {@code docs/fix-blocco-boot-2026-06-27.md}).
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,13 +95,17 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
         setTheme(mSettings.getTheme());
         setContentView(R.layout.empty);
 
-        // Fix blocco-al-boot (kiosk 24/7, reboot ~2x/giorno): DoorPhoneActivity e' il
-        // launcher e parte per prima, ma al boot il device e' su keyguard con schermo
-        // spento. Senza questi flag l'Activity viene messa in PAUSE subito (dietro il
-        // keyguard) e non resta mai RESUMED, quindi onServiceConnected()/Connect() non
-        // parte e Mumble non si connette mai finche' un umano non sblocca lo schermo.
-        // Stessi flag gia' usati da VideoVLCActivity: mostra sopra il lockscreen,
-        // accende lo schermo e lo tiene acceso, cosi' il router resuma e avvia il connect.
+        // Fix blocco-al-boot (kiosk reboot ~2x/giorno): DoorPhoneActivity e' il launcher
+        // e parte per prima, ma al boot il device e' su keyguard con schermo spento.
+        // Senza questi flag l'Activity viene messa in PAUSE subito (dietro il keyguard) e
+        // non resta mai RESUMED, quindi onServiceConnected()/Connect() non parte e Mumble
+        // non si connette mai finche' un umano non sblocca lo schermo.
+        // Stessi flag gia' usati da VideoVLCActivity: mostra il router sopra il lockscreen,
+        // accende lo schermo e lo tiene acceso DURANTE la finestra di boot/connect (il flag
+        // KEEP_SCREEN_ON vale solo finche' questa finestra e' in cima; quando VideoVLCActivity
+        // la copre, lo schermo torna a spegnersi a idle come da comportamento kiosk).
+        // NB: DISMISS_KEYGUARD sblocca solo un keyguard NON sicuro (senza PIN/pattern),
+        // assunzione valida per il kiosk; con un PIN configurato il boot tornerebbe a bloccarsi.
         getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
@@ -689,10 +699,11 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
 
             case CONNECTING:
                 Server server = service.getTargetServer();
-                // Guardia anti-blocco: se nel frattempo il servizio e' gia' CONNECTED
-                // (race re-front/observer durante il rimbalzo foreground), NON mostrare
-                // la modale di connessione sopra il video gia' attivo.
-                if (mService.isConnected()) break;
+                // Senza target server non c'e' nulla da mostrare ("Connessione a <host>")
+                // e dereferenziarlo piu' sotto sarebbe un NPE: esci dal ramo.
+                // L'invariante "nessuna modale a connessione attiva" e' gia' garantito da
+                // dismissConnectingDialog() in testa al metodo + nel ramo CONNECTED.
+                if (server == null) break;
                 mConnectingDialog = new ProgressDialog(this);
                 mConnectingDialog.setIndeterminate(true);
                 mConnectingDialog.setCancelable(true);
