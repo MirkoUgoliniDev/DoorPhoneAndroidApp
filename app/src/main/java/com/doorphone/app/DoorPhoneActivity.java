@@ -89,6 +89,19 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
         setTheme(mSettings.getTheme());
         setContentView(R.layout.empty);
 
+        // Fix blocco-al-boot (kiosk 24/7, reboot ~2x/giorno): DoorPhoneActivity e' il
+        // launcher e parte per prima, ma al boot il device e' su keyguard con schermo
+        // spento. Senza questi flag l'Activity viene messa in PAUSE subito (dietro il
+        // keyguard) e non resta mai RESUMED, quindi onServiceConnected()/Connect() non
+        // parte e Mumble non si connette mai finche' un umano non sblocca lo schermo.
+        // Stessi flag gia' usati da VideoVLCActivity: mostra sopra il lockscreen,
+        // accende lo schermo e lo tiene acceso, cosi' il router resuma e avvia il connect.
+        getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         setVolumeControlStream(mSettings.isHandsetMode() ? AudioManager.STREAM_VOICE_CALL : AudioManager.STREAM_MUSIC);
     }
 
@@ -146,9 +159,7 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
             mErrorDialog.dismiss();
         }
 
-        if (mConnectingDialog != null){
-            mConnectingDialog.dismiss();
-        }
+        dismissConnectingDialog();
 
         if(mService != null) {
             mService.unregisterObserver(mObserver);
@@ -648,13 +659,25 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
         updateConnectionState(service, false);
     }
 
+    /**
+     * @brief Chiude e azzera la ProgressDialog di connessione, se presente.
+     *
+     * Azzerare il riferimento (non solo dismiss()) impedisce dismiss "fantasma"
+     * su istanze stantie e garantisce l'invariante: a connessione attiva non deve
+     * mai coesistere una modale "Connessione a ...".
+     */
+    private void dismissConnectingDialog() {
+        if (mConnectingDialog != null) {
+            mConnectingDialog.dismiss();
+            mConnectingDialog = null;
+        }
+    }
+
     private void updateConnectionState(IHumlaService service, boolean allowOpenVideo) {
         Log.d(TAG, "updateConnectionState — state=" + (mService != null ? mService.getConnectionState() : "mService null")
                 + " allowOpenVideo=" + allowOpenVideo);
 
-        if (mConnectingDialog != null){
-            mConnectingDialog.dismiss();
-        }
+        dismissConnectingDialog();
 
         if (mErrorDialog != null){
             mErrorDialog.dismiss();
@@ -666,6 +689,10 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
 
             case CONNECTING:
                 Server server = service.getTargetServer();
+                // Guardia anti-blocco: se nel frattempo il servizio e' gia' CONNECTED
+                // (race re-front/observer durante il rimbalzo foreground), NON mostrare
+                // la modale di connessione sopra il video gia' attivo.
+                if (mService.isConnected()) break;
                 mConnectingDialog = new ProgressDialog(this);
                 mConnectingDialog.setIndeterminate(true);
                 mConnectingDialog.setCancelable(true);
@@ -693,6 +720,10 @@ public class DoorPhoneActivity extends Activity implements HumlaServiceProvider 
 
 
             case CONNECTED:
+                // Invariante: a connessione attiva nessuna modale di "connessione in
+                // corso". Difesa esplicita contro un onConnecting() asincrono arrivato
+                // appena prima del CONNECTED.
+                dismissConnectingDialog();
                 Log.d(TAG, "CONNECTED — apro/riporto in primo piano VideoVLCActivity (allowOpenVideo=" + allowOpenVideo + ")");
                 // DoorPhoneActivity usa il layout vuoto (R.layout.empty): e' solo un router
                 // che NON deve mai restare visibile a connessione attiva, altrimenti l'utente
