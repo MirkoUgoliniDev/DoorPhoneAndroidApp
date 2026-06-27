@@ -495,6 +495,20 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
             mNeedsRebind = false;
             bindService(new Intent(this, DoorPhoneService.class), mConnection, Context.BIND_AUTO_CREATE);
         }
+
+        // Riallineo del pallino di stato dalla verita' del servizio a ogni foreground.
+        // Il broadcast "status=Connected" NON e' sticky: se e' stato emesso mentre questa
+        // activity non esisteva ancora (al boot la connessione completa quando in primo
+        // piano c'e' il router DoorPhoneActivity) o era stopped (schermo spento kiosk, con
+        // il receiver deregistrato in onStop), e' perso per sempre. Una connessione gia'
+        // stabile non emette piu' onConnected(), quindi un mConnectionOk stale resterebbe
+        // indefinitamente (pallino rosso pur essendo CONNESSO). Qui copriamo le onResume
+        // SENZA rebind (es. onNewIntent da REORDER_TO_FRONT, ritorno da dialog/menu): sul
+        // rebind isBound e' ancora false e ci pensa onServiceConnected.
+        if (isBound && mService != null) {
+            mConnectionOk = mService.isConnected();
+            updateConnectionStatusOverlay();
+        }
     }
 
     /**
@@ -729,6 +743,8 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
                     mService.closeCall();
                 }
                 mConnectionOk = mService.isConnected();
+                Log.d(TAG, "onServiceConnected — isConnected=" + mConnectionOk
+                        + " ring=" + ring + " doorCall=" + mService.isDoorCallActive());
                 updateConnectionStatusOverlay();
             } catch (ClassCastException e) {
                 Log.e(TAG, "onServiceConnected: binder cast failed: " + e.getMessage());
@@ -828,6 +844,8 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
         mConnectionStatusOverlay.setTextColor(mConnectionOk ? Color.BLACK : Color.WHITE);
         mConnectionStatusOverlay.setBackgroundTintList(ColorStateList.valueOf(
                 Color.parseColor(mConnectionOk ? "#15ff00" : "#ff0033")));
+        Log.d(TAG, "overlay stato — piano=" + piano.trim() + " connectionOk=" + mConnectionOk
+                + " (" + (mConnectionOk ? "VERDE" : "ROSSO") + ")");
     }
 
     // -------------------------------------------------------------------------
@@ -879,6 +897,7 @@ public class VideoVLCActivity extends AppCompatActivity implements PostDataCallb
             String piano = mSettings.getDoorPiPiano();
 
             if (status != null) {
+                Log.d(TAG, "messageReceiver — status broadcast ricevuto: '" + status + "'");
                 actionBar = getSupportActionBar();
                 if (status.toLowerCase(Locale.US).equals("disconnected")) {
                     mConnectionOk = false;
